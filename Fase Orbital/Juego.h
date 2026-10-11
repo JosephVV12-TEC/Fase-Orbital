@@ -5,3 +5,6 @@
 #include "FuncionesJuego.h"
 
 using namespace std;
+
+/*Si funciona?*/
+//Si owo
