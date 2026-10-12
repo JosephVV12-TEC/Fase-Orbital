@@ -84,7 +84,7 @@ struct NodoBala
 	Bala dato; // Datos de la bala guardados en el nodo.
 	NodoBala* sig = NULL; // Siguiente nodo de la lista simplemente enlazada.
 
-	//Al destruirse, se ejecuta esta función
+	//Al destruirse, se ejecuta esta funciÃ³n
 	~NodoBala();
 };
 
@@ -196,3 +196,4 @@ struct Generador
 #include "FuncionesJuego.h"
 
 
+/*Si funciona?*/
