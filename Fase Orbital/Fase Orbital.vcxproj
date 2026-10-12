@@ -153,13 +153,17 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Fase-Orbital.cpp" />
+    <ClCompile Include="Jugador.cpp" />
+    <ClCompile Include="Motor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FuncionesJuego.h" />
+    <ClInclude Include="Jugador.h" />
     <ClInclude Include="Juego.h" />
+    <ClInclude Include="Motor.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
