@@ -4,7 +4,7 @@
 void inicializarJugador(Jugador& j, string nombre, bool bot) {
     j.alias = nombre;          // El punto significa: "dentro de j, guarda el alias"
     j.esBot = bot;             // Dentro de j, guarda si es bot o no
-    j.vidaNucleo = 100;        // Vida inicial del núcleo según el proyecto[cite: 16]
+    j.vidaNucleo = 100;        // Vida inicial del núcleo según el proyecto
     j.puntaje = 0;
     j.combo = 0;
     j.cargaPulso = 0;

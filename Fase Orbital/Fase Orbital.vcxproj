@@ -152,6 +152,7 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ColaSpawn.cpp" />
     <ClCompile Include="Fase-Orbital.cpp" />
     <ClCompile Include="Jugador.cpp" />
     <ClCompile Include="Motor.cpp" />
@@ -160,6 +161,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ColaSpawn.h" />
     <ClInclude Include="FuncionesJuego.h" />
     <ClInclude Include="Jugador.h" />
     <ClInclude Include="Juego.h" />

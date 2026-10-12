@@ -3,12 +3,12 @@
 void inicializarMotor(Motor& m) {
     m.jugadorActual = nullptr;
     m.tickActual = 0;
-    m.anguloNave = 270.0; // Ángulo inicial de la nave[cite: 16]
+    m.anguloNave = 270.0; // Ángulo inicial de la nave
 }
 
 void iniciarTurnoMotor(Motor& m, Jugador* nuevoJugador, ColaSpawn colaOleada) {
     m.jugadorActual = nuevoJugador;
-    m.colaSpawnOleada = colaOleada; // Copia la cola para este jugador[cite: 20]
+    m.colaSpawnOleada = colaOleada; // Copia la cola para este jugador
     m.tickActual = 0;
     m.anguloNave = 270.0;
 }
