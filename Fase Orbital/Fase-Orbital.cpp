@@ -2,21 +2,21 @@
 //Pongan sus nombres y Carnets aca
 
 
-//Joseph Vargas Villalta, Carne: 2026010975
+//Joseph Vargas Villalta,			Carne: 2026010975
+//Luis Josue Rosales Castillo,		Carne: 2026016613
 
 //Se llaman a las librerias necesarias
-#include <stdio.h>
 #include <iostream>
 #include <allegro5/allegro5.h>
 #include <allegro5/allegro_ttf.h>
 #include <allegro5/allegro_font.h>
-#include <allegro5/allegro_native_dialog.h>
 #include <allegro5/allegro_primitives.h>
 #include <allegro5/allegro_image.h>
+#include "Juego.h"
 
 using namespace std;
 
-void main()
+int main()
 {
 
 }
