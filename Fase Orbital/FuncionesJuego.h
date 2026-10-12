@@ -23,7 +23,5 @@
 #include <allegro5/allegro_audio.h>
 #include <allegro5/allegro_acodec.h>
 
-//Se incluye al juego en si
-#include "Juego.h"
 
 using namespace std;
