@@ -4,7 +4,11 @@
 #include <string>
 #include <cstdint>
 
+//Llamamos a la otra libreria que ya hicimos para que se pueda usar en este archivo
+#include "FuncionesJuego.h"
+
 using namespace std;
+
 
 // Tipos de enemigos que pueden aparecer durante el juego.
 enum class TipoEnemigo { Dron, Girador, Divisor, Mini, Tanque, Camaleon };
@@ -110,44 +114,6 @@ struct ListaBalas
 	int eliminarSi(Pred debeEliminarse);
 };
 
-// Evento que indica cuando y como debe aparecer un enemigo.
-struct Spawn
-{
-	int tick = 0; // Tick del juego en que aparece.
-	TipoEnemigo tipo = TipoEnemigo::Dron; // Tipo de enemigo que aparece.
-	int color = 0; // Codigo de color del enemigo.
-	int angulo = 0; // Angulo inicial de aparicion.
-	int sentido = 0; // Sentido de giro o movimiento.
-};
-
-// Cola enlazada de eventos Spawn; sus nodos son propiedad de la cola.
-struct ColaSpawn
-{
-	struct Nodo
-	{
-		Spawn dato; // Evento almacenado.
-		Nodo* sig = NULL; // Siguiente evento de la cola.
-	};
-
-	Nodo* frente = NULL; // Primer evento pendiente.
-	Nodo* finalNodo = NULL; // Ultimo evento para encolar en O(1).
-	int tam = 0; // Cantidad actual de eventos.
-
-	// Crea una cola vacia y libera sus nodos al destruirse.
-	ColaSpawn();
-	~ColaSpawn();
-	// Copia eventos creando nodos independientes.
-	ColaSpawn(const ColaSpawn& otra);
-	ColaSpawn& operator=(const ColaSpawn& otra);
-	// Agrega al final o extrae del frente en O(1).
-	void encolar(const Spawn& s);
-	bool desencolar(Spawn& out);
-	// Devuelve el frente sin extraerlo, o NULL si esta vacia.
-	const Spawn* verFrente();
-	bool vacia();
-	// Libera todos los nodos y deja la cola vacia.
-	void vaciar();
-};
 
 // Tipo del jugador definido por el sistema de juego.
 struct Jugador;
@@ -192,8 +158,7 @@ struct Generador
 	uint32_t siguiente();
 };
 
-//Llamamos a la otra libreria que ya hicimos para que se pueda usar en este archivo
-#include "FuncionesJuego.h"
+
 
 
 /*Si funciona?*/
