@@ -10,6 +10,7 @@ typedef struct Spawn
 	int tickSpawn;   // El tick en el que debe aparecer
 	int color;	   // El color del enemigo que debe aparecer
 	int angulo;      // El ángulo en el que debe aparecer porque como orbita en un planeta entonces vendran de distintos angulos de 0 a 359
+	int sentido;
 } *PtrSpawn;
 
 typedef struct NodoSpawn //Este struct sirve en palabras simples para crear una lista enlazada de spawns

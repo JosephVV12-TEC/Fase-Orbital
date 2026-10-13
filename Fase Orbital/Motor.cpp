@@ -8,7 +8,7 @@ void inicializarMotor(Motor& m) {
 
 void iniciarTurnoMotor(Motor& m, Jugador* nuevoJugador, ColaSpawn colaOleada) {
     m.jugadorActual = nuevoJugador;
-    m.colaSpawnOleada = colaOleada; // Copia la cola para este jugador
+	copiarCola(colaOleada, m.colaSpawnOleada); // Copia la cola para este jugador pero no la elimina de la original
     m.tickActual = 0;
     m.anguloNave = 270.0;
 }

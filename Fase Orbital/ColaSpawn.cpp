@@ -17,16 +17,12 @@ void encolar(ColaSpawn& c, Spawn s)
     Nuevo->dato = s;
     Nuevo->siguiente = NULL;
 
-    PtrNodoSpawn Aux = c.frente;
-    if (Aux != NULL) {
-        while (Aux->siguiente != NULL) 
-        {
-            Aux = Aux->siguiente;
-        }
-        Aux->siguiente = Nuevo;
+    if (c.final == NULL) 
+    {
+        c.frente = Nuevo;
     }
     else {
-        c.frente = Nuevo;
+        c.final->siguiente = Nuevo;
     }
 
     c.final = Nuevo;//Mantener final al dia
