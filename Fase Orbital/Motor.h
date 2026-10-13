@@ -1,10 +1,11 @@
 #pragma once
 #include "Jugador.h"
 #include "ListaEnemigos.h"
-#include "ListaBalas.h"
 #include "ColaSpawn.h"
+#include "ListaBalas.h"
 
-struct Motor {
+struct Motor 
+{
     Jugador* jugadorActual;      // Un puntero al jugador que está jugando
     ListaEnemigos listaEnemigos;
     ListaBalas listaBalas;

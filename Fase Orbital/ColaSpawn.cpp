@@ -34,11 +34,11 @@ void encolar(ColaSpawn& c, Spawn s)
 }
 
 //Saca el primer elemento y lo deja en 'salida'. Retorna false si la cola estaba vacia
-PtrNodoSpawn desencolar(ColaSpawn& c) {
+bool desencolar(ColaSpawn& c) {
 
     if (c.frente == NULL) 
     {         
-        return NULL;
+        return false;
     }
 
     PtrNodoSpawn Aux = c.frente;

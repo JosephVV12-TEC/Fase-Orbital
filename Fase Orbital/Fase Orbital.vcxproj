@@ -166,6 +166,8 @@
     <ClInclude Include="FuncionesJuego.h" />
     <ClInclude Include="Jugador.h" />
     <ClInclude Include="Juego.h" />
+    <ClInclude Include="ListaBalas.h" />
+    <ClInclude Include="ListaEnemigos.h" />
     <ClInclude Include="Motor.h" />
     <ClInclude Include="RondaJugadores.h" />
   </ItemGroup>
