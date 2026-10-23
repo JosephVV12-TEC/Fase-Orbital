@@ -1,33 +1,318 @@
 #include "Motor.h"
+#include <cmath>
 
-void inicializarMotor(Motor& m) {
+namespace {
+    const double ANGULO_MAXIMO_ROTACION = 6.0;
+    const double RADIO_NUCLEO = 60.0;
+    const double RADIO_PULSO = 160.0;
+    const double VELOCIDAD_BALA = 6.0;
+
+    double normalizarAngulo(double angulo)
+    {
+        while (angulo < 0.0)
+            angulo += 360.0;
+        while (angulo >= 360.0)
+            angulo -= 360.0;
+        return angulo;
+    }
+
+    double diferenciaAngularMasCorta(double origen, double destino)
+    {
+        double delta = normalizarAngulo(destino - origen);
+        if (delta > 180.0)
+            delta -= 360.0;
+        return delta;
+    }
+
+    void aplicarRotacionNave(Motor& motor, double objetivo)
+    {
+        if (motor.jugadorActual == nullptr)
+            return;
+
+        double delta = diferenciaAngularMasCorta(motor.anguloNave, objetivo);
+        if (delta > ANGULO_MAXIMO_ROTACION)
+            delta = ANGULO_MAXIMO_ROTACION;
+        else if (delta < -ANGULO_MAXIMO_ROTACION)
+            delta = -ANGULO_MAXIMO_ROTACION;
+
+        motor.anguloNave = normalizarAngulo(motor.anguloNave + delta);
+    }
+
+    int proximoIdEnemigo = 1;
+
+    Enemigo crearEnemigoDesdeSpawn(const Spawn& sp)
+    {
+        Enemigo e;
+        e.id = proximoIdEnemigo++;
+        e.tipo = static_cast<TipoEnemigo>(sp.tipoEnemigo);
+        e.color = sp.color;
+        e.r = 160.0;
+        e.theta = static_cast<double>(sp.angulo);
+        e.omega = static_cast<double>((sp.sentido == 0 ? 1 : sp.sentido)) * 2.0;
+        e.vida = 1;
+        e.radio = 10;
+        e.ticksColor = 0;
+
+        if (e.tipo == TipoEnemigo::Tanque)
+        {
+            e.vida = 3;
+            e.radio = 18;
+        }
+        else if (e.tipo == TipoEnemigo::Divisor)
+        {
+            e.vida = 2;
+            e.radio = 14;
+        }
+        else if (e.tipo == TipoEnemigo::Mini)
+        {
+            e.omega *= 2.0;
+            e.radio = 8;
+        }
+        else if (e.tipo == TipoEnemigo::Camaleon)
+        {
+            e.color = 0;
+        }
+
+        return e;
+    }
+
+    void moverEnemigo(Enemigo& enemigo)
+    {
+        switch (enemigo.tipo)
+        {
+            case TipoEnemigo::Dron:
+                enemigo.r += 1.4;
+                break;
+            case TipoEnemigo::Girador:
+                enemigo.r += 1.2;
+                enemigo.theta = normalizarAngulo(enemigo.theta + enemigo.omega);
+                break;
+            case TipoEnemigo::Divisor:
+                enemigo.r += 1.1;
+                break;
+            case TipoEnemigo::Mini:
+                enemigo.r += 1.6;
+                enemigo.theta = normalizarAngulo(enemigo.theta + enemigo.omega);
+                break;
+            case TipoEnemigo::Tanque:
+                enemigo.r += 0.9;
+                break;
+            case TipoEnemigo::Camaleon:
+                enemigo.r += 1.0;
+                enemigo.ticksColor += 1;
+                if (enemigo.ticksColor >= 42)
+                {
+                    enemigo.color = (enemigo.color + 1) % 3;
+                    enemigo.ticksColor = 0;
+                }
+                break;
+            default:
+                enemigo.r += 1.0;
+                break;
+        }
+    }
+
+    void daniarNucleo(Motor& motor)
+    {
+        if (motor.jugadorActual == nullptr)
+            return;
+
+        if (motor.jugadorActual->vidaNucleo > 0)
+            motor.jugadorActual->vidaNucleo -= 10;
+        motor.jugadorActual->combo = 0;
+    }
+}
+
+void inicializarMotor(Motor& m)
+{
     m.jugadorActual = nullptr;
     m.tickActual = 0;
-    m.anguloNave = 270.0; // Ángulo inicial de la nave
+    m.anguloNave = 270.0;
+    inicializarCola(m.colaSpawnOleada);
 }
 
-void iniciarTurnoMotor(Motor& m, Jugador* nuevoJugador, ColaSpawn colaOleada) {
+void iniciarTurnoMotor(Motor& m, Jugador* nuevoJugador, ColaSpawn colaOleada)
+{
     m.jugadorActual = nuevoJugador;
-	copiarCola(colaOleada, m.colaSpawnOleada); // Copia la cola para este jugador pero no la elimina de la original
+    copiarCola(colaOleada, m.colaSpawnOleada);
     m.tickActual = 0;
     m.anguloNave = 270.0;
+
+    if (m.jugadorActual != nullptr)
+    {
+        m.jugadorActual->combo = 0;
+        m.jugadorActual->cargaPulso = 0;
+    }
 }
 
-void procesarTickMotor(Motor& m, int nuevoColor) {
-    // Si no hay jugador o ya perdió, no hace nada
-    if (m.jugadorActual == nullptr) {
+void procesarTickMotor(Motor& m, int nuevoColor)
+{
+    if (m.jugadorActual == nullptr)
         return;
-    }
 
-    if (m.jugadorActual->vidaNucleo <= 0) {
+    if (m.jugadorActual->vidaNucleo <= 0)
         return;
-    }
 
-    // Avanza el tiempo del juego (un tick)
-    m.tickActual = m.tickActual + 1;
-
-    // Cambia el color de la nave si el jugador presionó una tecla válida (0, 1 o 2)
-    if (nuevoColor >= 0 && nuevoColor <= 2) {
+    if (nuevoColor >= 0 && nuevoColor <= 2)
         m.jugadorActual->colorActivo = nuevoColor;
+
+    double objetivo = m.anguloNave;
+    aplicarRotacionNave(m, objetivo);
+
+    m.tickActual += 1;
+
+    Spawn spawnActual;
+    while (!colaVacia(m.colaSpawnOleada))
+    {
+        if (!desencolar(m.colaSpawnOleada, spawnActual))
+            break;
+
+        if (spawnActual.tickSpawn <= m.tickActual)
+        {
+            m.listaEnemigos.insertarFinal(crearEnemigoDesdeSpawn(spawnActual));
+        }
+        else
+        {
+            encolar(m.colaSpawnOleada, spawnActual);
+            break;
+        }
+    }
+
+    if ((m.tickActual % 4) == 0)
+    {
+        Bala bala;
+        bala.x = 0.0;
+        bala.y = 0.0;
+        const double rad = (m.anguloNave * 3.14159265358979323846) / 180.0;
+        bala.vx = std::cos(rad) * VELOCIDAD_BALA;
+        bala.vy = std::sin(rad) * VELOCIDAD_BALA;
+        bala.color = m.jugadorActual->colorActivo;
+        bala.duenio = 0;
+        m.listaBalas.insertarInicio(bala);
+    }
+
+    NodoEnemigo* enemigoActual = m.listaEnemigos.primero();
+    while (enemigoActual != nullptr)
+    {
+        NodoEnemigo* siguiente = enemigoActual->sig;
+        moverEnemigo(enemigoActual->dato);
+
+        if (enemigoActual->dato.r >= RADIO_NUCLEO)
+        {
+            enemigoActual = siguiente;
+            continue;
+        }
+
+        daniarNucleo(m);
+        enemigoActual = m.listaEnemigos.eliminar(enemigoActual);
+    }
+
+    NodoBala* balaActual = m.listaBalas.cabeza;
+    while (balaActual != nullptr)
+    {
+        NodoBala* siguienteBala = balaActual->sig;
+        Bala& bala = balaActual->dato;
+        bala.x += bala.vx;
+        bala.y += bala.vy;
+
+        double distancia = std::sqrt((bala.x * bala.x) + (bala.y * bala.y));
+        bool impacto = false;
+
+        NodoEnemigo* enemigoColision = m.listaEnemigos.primero();
+        while (enemigoColision != nullptr && !impacto)
+        {
+            if (std::fabs(enemigoColision->dato.r - distancia) <= 14.0)
+            {
+                impacto = true;
+
+                if (enemigoColision->dato.color == bala.color)
+                {
+                    enemigoColision->dato.vida -= 1;
+                    m.jugadorActual->puntaje += 25;
+                    m.jugadorActual->combo += 1;
+                    m.jugadorActual->cargaPulso = m.jugadorActual->cargaPulso + 10;
+                    if (m.jugadorActual->cargaPulso > 100)
+                        m.jugadorActual->cargaPulso = 100;
+
+                    if (enemigoColision->dato.vida <= 0)
+                    {
+                        if (enemigoColision->dato.tipo == TipoEnemigo::Divisor)
+                        {
+                            Enemigo miniA = enemigoColision->dato;
+                            miniA.tipo = TipoEnemigo::Mini;
+                            miniA.id = proximoIdEnemigo++;
+                            miniA.vida = 1;
+                            miniA.radio = 8;
+                            miniA.r = enemigoColision->dato.r + 6.0;
+                            miniA.theta = normalizarAngulo(enemigoColision->dato.theta - 10.0);
+                            miniA.omega = 2.0;
+                            miniA.color = (enemigoColision->dato.color + 1) % 3;
+
+                            Enemigo miniB = enemigoColision->dato;
+                            miniB.tipo = TipoEnemigo::Mini;
+                            miniB.id = proximoIdEnemigo++;
+                            miniB.vida = 1;
+                            miniB.radio = 8;
+                            miniB.r = enemigoColision->dato.r + 6.0;
+                            miniB.theta = normalizarAngulo(enemigoColision->dato.theta + 10.0);
+                            miniB.omega = -2.0;
+                            miniB.color = (enemigoColision->dato.color + 2) % 3;
+
+                            NodoEnemigo* nodoMiniA = m.listaEnemigos.insertarDespues(enemigoColision, miniA);
+                            m.listaEnemigos.insertarDespues(nodoMiniA, miniB);
+                            m.listaEnemigos.eliminar(enemigoColision);
+                        }
+                        else
+                        {
+                            m.listaEnemigos.eliminar(enemigoColision);
+                        }
+                    }
+                }
+                else
+                {
+                    enemigoColision->dato.r += 8.0;
+                    enemigoColision->dato.theta = normalizarAngulo(enemigoColision->dato.theta + 12.0);
+                    m.jugadorActual->combo = 0;
+                }
+            }
+            enemigoColision = enemigoColision->sig;
+        }
+
+        if (distancia > 320.0 || impacto)
+        {
+            NodoBala* anterior = nullptr;
+            NodoBala* actual = m.listaBalas.cabeza;
+            while (actual != nullptr && actual != balaActual)
+            {
+                anterior = actual;
+                actual = actual->sig;
+            }
+
+            if (anterior == nullptr)
+                m.listaBalas.cabeza = balaActual->sig;
+            else
+                anterior->sig = balaActual->sig;
+
+            delete balaActual;
+            m.listaBalas.tam--;
+        }
+
+        balaActual = siguienteBala;
+    }
+
+    if (m.jugadorActual->cargaPulso >= 100)
+    {
+        m.jugadorActual->cargaPulso = 0;
+        NodoEnemigo* pulsoActual = m.listaEnemigos.primero();
+        while (pulsoActual != nullptr)
+        {
+            NodoEnemigo* sigPulso = pulsoActual->sig;
+            if (pulsoActual->dato.r <= RADIO_PULSO)
+            {
+                m.jugadorActual->puntaje += 15;
+                m.listaEnemigos.eliminar(pulsoActual);
+            }
+            pulsoActual = sigPulso;
+        }
     }
 }

@@ -30,7 +30,7 @@ void encolar(ColaSpawn& c, Spawn s)
 }
 
 //Saca el primer elemento y lo deja en 'salida'. Retorna false si la cola estaba vacia
-bool desencolar(ColaSpawn& c) {
+bool desencolar(ColaSpawn& c, Spawn& salida) {
 
     if (c.frente == NULL) 
     {         
@@ -38,6 +38,7 @@ bool desencolar(ColaSpawn& c) {
     }
 
     PtrNodoSpawn Aux = c.frente;
+    salida = Aux->dato;
     c.frente = c.frente->siguiente;
     Aux->siguiente = NULL;
 
@@ -47,7 +48,8 @@ bool desencolar(ColaSpawn& c) {
     }
 
     c.tam = c.tam - 1;
-    return Aux;
+    delete Aux;
+    return true;
 }
 
 //Retorna un puntero al dato del frente sin sacarlo, o NULL si esta vacia

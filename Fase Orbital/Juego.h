@@ -16,11 +16,18 @@ using namespace std;
 // Generador congruencial lineal usado por la seccion 3.6.
 struct Generador
 {
-	uint32_t x; // Estado interno del generador.
-
-	// Inicializa el estado con la semilla indicada.
-	Generador(uint32_t semilla);
-	// Avanza el estado y devuelve el siguiente valor pseudoaleatorio.
-	uint32_t siguiente();
+ 	uint32_t x; // Estado interno del generador.
+ 
+ 	// Inicializa el estado con la semilla indicada.
+ 	Generador(uint32_t semilla)
+ 	{
+ 		x = semilla == 0 ? 1u : semilla;
+ 	}
+ 
+ 	// Avanza el estado y devuelve el siguiente valor pseudoaleatorio.
+ 	uint32_t siguiente()
+ 	{
+ 		x = x * 1664525u + 1013904223u;
+ 		return x;
+ 	}
 };
-

@@ -41,6 +41,9 @@ ListaEnemigos::~ListaEnemigos()
 		delete actual;
 		actual = siguiente;
 	}
+	cabeza = NULL;
+	cola = NULL;
+	tam = 0;
 }
 
 // Agrega un nodo al final ajustando cabeza/cola y los enlaces en O(1).
@@ -48,15 +51,21 @@ NodoEnemigo* ListaEnemigos::insertarFinal(const Enemigo& e)
 {
 	NodoEnemigo* nodo = new NodoEnemigo;
 	nodo->dato = e;
-	nodo->ant = cola;
+	nodo->ant = NULL;
 	nodo->sig = NULL;
 
-	if (cola != NULL)
-		cola->sig = nodo;
-	else
+	if (vacia())
+	{
 		cabeza = nodo;
+		cola = nodo;
+	}
+	else
+	{
+		nodo->ant = cola;
+		cola->sig = nodo;
+		cola = nodo;
+	}
 
-	cola = nodo;
 	++tam;
 	return nodo;
 }
