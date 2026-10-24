@@ -1,4 +1,4 @@
-#include "Motor.h"
+﻿#include "Motor.h"
 #include <cmath>
 
 namespace {
@@ -81,24 +81,24 @@ namespace {
         switch (enemigo.tipo)
         {
             case TipoEnemigo::Dron:
-                enemigo.r += 1.4;
+                enemigo.r -= 1.4;
                 break;
             case TipoEnemigo::Girador:
-                enemigo.r += 1.2;
+                enemigo.r -= 1.2;
                 enemigo.theta = normalizarAngulo(enemigo.theta + enemigo.omega);
                 break;
             case TipoEnemigo::Divisor:
-                enemigo.r += 1.1;
+                enemigo.r -= 1.1;
                 break;
             case TipoEnemigo::Mini:
-                enemigo.r += 1.6;
+                enemigo.r -= 1.6;
                 enemigo.theta = normalizarAngulo(enemigo.theta + enemigo.omega);
                 break;
             case TipoEnemigo::Tanque:
-                enemigo.r += 0.9;
+                enemigo.r -= 0.9;
                 break;
             case TipoEnemigo::Camaleon:
-                enemigo.r += 1.0;
+                enemigo.r -= 1.0;
                 enemigo.ticksColor += 1;
                 if (enemigo.ticksColor >= 42)
                 {
@@ -107,7 +107,7 @@ namespace {
                 }
                 break;
             default:
-                enemigo.r += 1.0;
+                enemigo.r -= 1.0;
                 break;
         }
     }
@@ -197,7 +197,7 @@ void procesarTickMotor(Motor& m, int nuevoColor)
         NodoEnemigo* siguiente = enemigoActual->sig;
         moverEnemigo(enemigoActual->dato);
 
-        if (enemigoActual->dato.r >= RADIO_NUCLEO)
+        if (enemigoActual->dato.r > RADIO_NUCLEO)
         {
             enemigoActual = siguiente;
             continue;
