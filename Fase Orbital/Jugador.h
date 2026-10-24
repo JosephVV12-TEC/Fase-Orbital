@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <string>
 using namespace std;
 
@@ -11,3 +11,5 @@ struct Jugador {
     int cargaPulso;
     int colorActivo; // 0 = Cian, 1 = Magenta, 2 = Ámbar
 };
+
+void inicializarJugador(Jugador& j, string nombre, bool bot);

@@ -1,4 +1,4 @@
-#include "Motor.h"
+﻿#include "Motor.h"
 #include <cmath>
 
 namespace {
@@ -46,7 +46,7 @@ namespace {
         e.id = proximoIdEnemigo++;
         e.tipo = static_cast<TipoEnemigo>(sp.tipoEnemigo);
         e.color = sp.color;
-        e.r = 160.0;
+        e.r = 300.0;
         e.theta = static_cast<double>(sp.angulo);
         e.omega = static_cast<double>((sp.sentido == 0 ? 1 : sp.sentido)) * 2.0;
         e.vida = 1;
@@ -81,24 +81,24 @@ namespace {
         switch (enemigo.tipo)
         {
             case TipoEnemigo::Dron:
-                enemigo.r += 1.4;
+                enemigo.r -= 1.4;
                 break;
             case TipoEnemigo::Girador:
-                enemigo.r += 1.2;
+                enemigo.r -= 1.2;
                 enemigo.theta = normalizarAngulo(enemigo.theta + enemigo.omega);
                 break;
             case TipoEnemigo::Divisor:
-                enemigo.r += 1.1;
+                enemigo.r -= 1.1;
                 break;
             case TipoEnemigo::Mini:
-                enemigo.r += 1.6;
+                enemigo.r -= 1.6;
                 enemigo.theta = normalizarAngulo(enemigo.theta + enemigo.omega);
                 break;
             case TipoEnemigo::Tanque:
-                enemigo.r += 0.9;
+                enemigo.r -= 0.9;
                 break;
             case TipoEnemigo::Camaleon:
-                enemigo.r += 1.0;
+                enemigo.r -= 1.0;
                 enemigo.ticksColor += 1;
                 if (enemigo.ticksColor >= 42)
                 {
@@ -107,7 +107,7 @@ namespace {
                 }
                 break;
             default:
-                enemigo.r += 1.0;
+                enemigo.r -= 1.0;
                 break;
         }
     }
@@ -120,6 +120,26 @@ namespace {
         if (motor.jugadorActual->vidaNucleo > 0)
             motor.jugadorActual->vidaNucleo -= 10;
         motor.jugadorActual->combo = 0;
+    }
+
+    void posicionPolarACartesiana(double r, double theta, double& x, double& y)
+    {
+        const double rad = (theta * 3.14159265358979323846) / 180.0;
+        x = std::cos(rad) * r;
+        y = std::sin(rad) * r;
+    }
+
+    bool balaImpactaEnemigo(const Bala& bala, const Enemigo& enemigo)
+    {
+        double xEnemigo = 0.0;
+        double yEnemigo = 0.0;
+        posicionPolarACartesiana(enemigo.r, enemigo.theta, xEnemigo, yEnemigo);
+
+        const double dx = bala.x - xEnemigo;
+        const double dy = bala.y - yEnemigo;
+        const double distancia = std::sqrt((dx * dx) + (dy * dy));
+
+        return distancia <= static_cast<double>(enemigo.radio + 4);
     }
 }
 
@@ -181,9 +201,9 @@ void procesarTickMotor(Motor& m, int nuevoColor)
     if ((m.tickActual % 4) == 0)
     {
         Bala bala;
-        bala.x = 0.0;
-        bala.y = 0.0;
         const double rad = (m.anguloNave * 3.14159265358979323846) / 180.0;
+        bala.x = std::cos(rad) * 100.0;
+        bala.y = std::sin(rad) * 100.0;
         bala.vx = std::cos(rad) * VELOCIDAD_BALA;
         bala.vy = std::sin(rad) * VELOCIDAD_BALA;
         bala.color = m.jugadorActual->colorActivo;
@@ -197,7 +217,7 @@ void procesarTickMotor(Motor& m, int nuevoColor)
         NodoEnemigo* siguiente = enemigoActual->sig;
         moverEnemigo(enemigoActual->dato);
 
-        if (enemigoActual->dato.r >= RADIO_NUCLEO)
+        if (enemigoActual->dato.r > RADIO_NUCLEO)
         {
             enemigoActual = siguiente;
             continue;
@@ -221,41 +241,42 @@ void procesarTickMotor(Motor& m, int nuevoColor)
         NodoEnemigo* enemigoColision = m.listaEnemigos.primero();
         while (enemigoColision != nullptr && !impacto)
         {
-            if (std::fabs(enemigoColision->dato.r - distancia) <= 14.0)
+            if (balaImpactaEnemigo(bala, enemigoColision->dato))
             {
                 impacto = true;
 
                 if (enemigoColision->dato.color == bala.color)
                 {
                     enemigoColision->dato.vida -= 1;
-                    m.jugadorActual->puntaje += 25;
-                    m.jugadorActual->combo += 1;
-                    m.jugadorActual->cargaPulso = m.jugadorActual->cargaPulso + 10;
-                    if (m.jugadorActual->cargaPulso > 100)
-                        m.jugadorActual->cargaPulso = 100;
 
                     if (enemigoColision->dato.vida <= 0)
                     {
+                        m.jugadorActual->puntaje += 25;
+                        m.jugadorActual->combo += 1;
+                        m.jugadorActual->cargaPulso = m.jugadorActual->cargaPulso + 10;
+                        if (m.jugadorActual->cargaPulso > 100)
+                            m.jugadorActual->cargaPulso = 100;
+
                         if (enemigoColision->dato.tipo == TipoEnemigo::Divisor)
                         {
                             Enemigo miniA = enemigoColision->dato;
                             miniA.tipo = TipoEnemigo::Mini;
                             miniA.id = proximoIdEnemigo++;
                             miniA.vida = 1;
-                            miniA.radio = 8;
-                            miniA.r = enemigoColision->dato.r + 6.0;
-                            miniA.theta = normalizarAngulo(enemigoColision->dato.theta - 10.0);
-                            miniA.omega = 2.0;
+                            miniA.radio = 4;
+                            miniA.r = enemigoColision->dato.r;
+                            miniA.theta = normalizarAngulo(enemigoColision->dato.theta - 4.0);
+                            miniA.omega = -1.7;
                             miniA.color = (enemigoColision->dato.color + 1) % 3;
 
                             Enemigo miniB = enemigoColision->dato;
                             miniB.tipo = TipoEnemigo::Mini;
                             miniB.id = proximoIdEnemigo++;
                             miniB.vida = 1;
-                            miniB.radio = 8;
-                            miniB.r = enemigoColision->dato.r + 6.0;
-                            miniB.theta = normalizarAngulo(enemigoColision->dato.theta + 10.0);
-                            miniB.omega = -2.0;
+                            miniB.radio = 4;
+                            miniB.r = enemigoColision->dato.r;
+                            miniB.theta = normalizarAngulo(enemigoColision->dato.theta + 4.0);
+                            miniB.omega = 1.7;
                             miniB.color = (enemigoColision->dato.color + 2) % 3;
 
                             NodoEnemigo* nodoMiniA = m.listaEnemigos.insertarDespues(enemigoColision, miniA);
@@ -270,15 +291,17 @@ void procesarTickMotor(Motor& m, int nuevoColor)
                 }
                 else
                 {
-                    enemigoColision->dato.r += 8.0;
-                    enemigoColision->dato.theta = normalizarAngulo(enemigoColision->dato.theta + 12.0);
+                    enemigoColision->dato.r += 9.0;
                     m.jugadorActual->combo = 0;
                 }
             }
-            enemigoColision = enemigoColision->sig;
+            else
+            {
+                enemigoColision = enemigoColision->sig;
+            }
         }
 
-        if (distancia > 320.0 || impacto)
+        if (distancia > 720.0 || std::fabs(bala.x) > 700.0 || std::fabs(bala.y) > 560.0 || impacto)
         {
             NodoBala* anterior = nullptr;
             NodoBala* actual = m.listaBalas.cabeza;
