@@ -157,7 +157,10 @@
     <ClCompile Include="Fase-Orbital.cpp" />
     <ClCompile Include="Jugador.cpp" />
     <ClCompile Include="Motor.cpp" />
+    <ClCompile Include="Oleada.cpp" />
+    <ClCompile Include="Partida.cpp" />
     <ClCompile Include="RondaJugadores.cpp" />
+    <ClCompile Include="VistaAllegro.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -171,7 +174,10 @@
     <ClInclude Include="ListaBalas.h" />
     <ClInclude Include="ListaEnemigos.h" />
     <ClInclude Include="Motor.h" />
+    <ClInclude Include="Oleada.h" />
+    <ClInclude Include="Partida.h" />
     <ClInclude Include="RondaJugadores.h" />
+    <ClInclude Include="VistaAllegro.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

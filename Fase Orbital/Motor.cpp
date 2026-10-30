@@ -120,6 +120,7 @@ namespace {
         if (motor.jugadorActual->vidaNucleo > 0)
             motor.jugadorActual->vidaNucleo -= 10;
         motor.jugadorActual->combo = 0;
+        motor.evDanoNucleo = true;
     }
 
     void posicionPolarACartesiana(double r, double theta, double& x, double& y)
@@ -127,6 +128,47 @@ namespace {
         const double rad = (theta * 3.14159265358979323846) / 180.0;
         x = std::cos(rad) * r;
         y = std::sin(rad) * r;
+    }
+
+    // Guarda donde murio un enemigo para que la vista dibuje la explosion
+    void registrarBaja(Motor& m, const Enemigo& e)
+    {
+        if (m.nBajas < 32)
+        {
+            m.bajas[m.nBajas].r = e.r;
+            m.bajas[m.nBajas].theta = e.theta;
+            m.bajas[m.nBajas].color = e.color;
+            m.nBajas += 1;
+        }
+    }
+
+    // Deja los campos de acciones y eventos en su valor inicial
+    void reiniciarAccionesYEventos(Motor& m)
+    {
+        m.anguloObjetivo = 270.0;
+        m.pulsoSolicitado = false;
+        m.ondaActiva = false;
+        m.ondaR = 0.0;
+        m.evDisparo = false;
+        m.evErroneo = false;
+        m.evDanoNucleo = false;
+        m.evPulso = false;
+        m.nBajas = 0;
+    }
+
+    // Vacia enemigos y balas que hayan quedado del turno anterior
+    void limpiarCampo(Motor& m)
+    {
+        while (!m.listaEnemigos.vacia())
+            m.listaEnemigos.eliminar(m.listaEnemigos.primero());
+
+        while (m.listaBalas.cabeza != nullptr)
+        {
+            NodoBala* b = m.listaBalas.cabeza;
+            m.listaBalas.cabeza = b->sig;
+            delete b;
+            m.listaBalas.tam--;
+        }
     }
 
     bool balaImpactaEnemigo(const Bala& bala, const Enemigo& enemigo)
@@ -149,6 +191,7 @@ void inicializarMotor(Motor& m)
     m.tickActual = 0;
     m.anguloNave = 270.0;
     inicializarCola(m.colaSpawnOleada);
+    reiniciarAccionesYEventos(m);
 }
 
 void iniciarTurnoMotor(Motor& m, Jugador* nuevoJugador, ColaSpawn colaOleada)
@@ -157,16 +200,24 @@ void iniciarTurnoMotor(Motor& m, Jugador* nuevoJugador, ColaSpawn colaOleada)
     copiarCola(colaOleada, m.colaSpawnOleada);
     m.tickActual = 0;
     m.anguloNave = 270.0;
+    limpiarCampo(m);
+    reiniciarAccionesYEventos(m);
 
     if (m.jugadorActual != nullptr)
     {
+        // Seccion 5.1: el combo se reinicia, la vida y la carga de pulso se CONSERVAN
         m.jugadorActual->combo = 0;
-        m.jugadorActual->cargaPulso = 0;
     }
 }
 
 void procesarTickMotor(Motor& m, int nuevoColor)
 {
+    m.evDisparo = false;
+    m.evErroneo = false;
+    m.evDanoNucleo = false;
+    m.evPulso = false;
+    m.nBajas = 0;
+
     if (m.jugadorActual == nullptr)
         return;
 
@@ -176,26 +227,30 @@ void procesarTickMotor(Motor& m, int nuevoColor)
     if (nuevoColor >= 0 && nuevoColor <= 2)
         m.jugadorActual->colorActivo = nuevoColor;
 
-    double objetivo = m.anguloNave;
-    aplicarRotacionNave(m, objetivo);
+    aplicarRotacionNave(m, m.anguloObjetivo);
+
+    // Activar pulso: solo con carga = 100 y si la vista/bot lo pidio (seccion 3.4)
+    if (m.pulsoSolicitado && !m.ondaActiva && m.jugadorActual->cargaPulso >= 100)
+    {
+        m.jugadorActual->cargaPulso = 0;
+        m.ondaActiva = true;
+        m.ondaR = 20.0;
+        m.evPulso = true;
+    }
+    m.pulsoSolicitado = false;
 
     m.tickActual += 1;
 
+    // Se mira el frente SIN sacarlo; si todavia no le toca, la cola no se altera
     Spawn spawnActual;
     while (!colaVacia(m.colaSpawnOleada))
     {
-        if (!desencolar(m.colaSpawnOleada, spawnActual))
+        PtrSpawn frente = verFrente(m.colaSpawnOleada);
+        if (frente == nullptr || frente->tickSpawn > m.tickActual)
             break;
 
-        if (spawnActual.tickSpawn <= m.tickActual)
-        {
-            m.listaEnemigos.insertarFinal(crearEnemigoDesdeSpawn(spawnActual));
-        }
-        else
-        {
-            encolar(m.colaSpawnOleada, spawnActual);
-            break;
-        }
+        desencolar(m.colaSpawnOleada, spawnActual);
+        m.listaEnemigos.insertarFinal(crearEnemigoDesdeSpawn(spawnActual));
     }
 
     if ((m.tickActual % 4) == 0)
@@ -209,6 +264,7 @@ void procesarTickMotor(Motor& m, int nuevoColor)
         bala.color = m.jugadorActual->colorActivo;
         bala.duenio = 0;
         m.listaBalas.insertarInicio(bala);
+        m.evDisparo = true;
     }
 
     NodoEnemigo* enemigoActual = m.listaEnemigos.primero();
@@ -251,6 +307,7 @@ void procesarTickMotor(Motor& m, int nuevoColor)
 
                     if (enemigoColision->dato.vida <= 0)
                     {
+                        registrarBaja(m, enemigoColision->dato);
                         m.jugadorActual->puntaje += 25;
                         m.jugadorActual->combo += 1;
                         m.jugadorActual->cargaPulso = m.jugadorActual->cargaPulso + 10;
@@ -293,6 +350,7 @@ void procesarTickMotor(Motor& m, int nuevoColor)
                 {
                     enemigoColision->dato.r += 9.0;
                     m.jugadorActual->combo = 0;
+                    m.evErroneo = true;
                 }
             }
             else
@@ -323,19 +381,26 @@ void procesarTickMotor(Motor& m, int nuevoColor)
         balaActual = siguienteBala;
     }
 
-    if (m.jugadorActual->cargaPulso >= 100)
+    // Onda de pulso (seccion 3.4): nace en r = 20, crece 12 u/tick y destruye
+    // sin importar el color a todo enemigo con |r - r_onda| < radio + 3
+    if (m.ondaActiva)
     {
-        m.jugadorActual->cargaPulso = 0;
+        m.ondaR += 12.0;
+
         NodoEnemigo* pulsoActual = m.listaEnemigos.primero();
         while (pulsoActual != nullptr)
         {
             NodoEnemigo* sigPulso = pulsoActual->sig;
-            if (pulsoActual->dato.r <= RADIO_PULSO)
+            if (std::fabs(pulsoActual->dato.r - m.ondaR) < static_cast<double>(pulsoActual->dato.radio + 3))
             {
-                m.jugadorActual->puntaje += 15;
+                m.jugadorActual->puntaje += 15; // TODO reglas: puntos del tipo x multiplicador
+                registrarBaja(m, pulsoActual->dato);
                 m.listaEnemigos.eliminar(pulsoActual);
             }
             pulsoActual = sigPulso;
         }
+
+        if (m.ondaR > 320.0)
+            m.ondaActiva = false;
     }
 }
