@@ -3,9 +3,10 @@
 
 namespace {
     const double ANGULO_MAXIMO_ROTACION = 6.0;
-    const double RADIO_NUCLEO = 60.0;
-    const double RADIO_PULSO = 160.0;
-    const double VELOCIDAD_BALA = 6.0;
+    const double RADIO_NUCLEO = 20.0;
+    const double RADIO_ANILLO = 100.0;
+    const double RADIO_BORRADO_BALA = 320.0;
+    const double VELOCIDAD_BALA = 9.0;
 
     double normalizarAngulo(double angulo)
     {
@@ -40,7 +41,44 @@ namespace {
 
     int proximoIdEnemigo = 1;
 
-    Enemigo crearEnemigoDesdeSpawn(const Spawn& sp)
+    // v = 0.8 + 0.08*n, multiplicada por el factor de cada tipo (seccion 3.3)
+    double velocidadEnemigo(TipoEnemigo tipo, int oleada)
+    {
+        const double v = 0.8 + 0.08 * oleada;
+        switch (tipo)
+        {
+        case TipoEnemigo::Dron:     return 1.00 * v;
+        case TipoEnemigo::Girador:  return 0.85 * v;
+        case TipoEnemigo::Divisor:  return 0.80 * v;
+        case TipoEnemigo::Mini:     return 1.25 * v;
+        case TipoEnemigo::Tanque:   return 0.50 * v;
+        case TipoEnemigo::Camaleon: return 0.85 * v;
+        }
+        return v;
+    }
+
+    int puntosDelTipo(TipoEnemigo tipo)
+    {
+        switch (tipo)
+        {
+        case TipoEnemigo::Dron:     return 100;
+        case TipoEnemigo::Girador:  return 150;
+        case TipoEnemigo::Divisor:  return 200;
+        case TipoEnemigo::Mini:     return 75;
+        case TipoEnemigo::Tanque:   return 400;
+        case TipoEnemigo::Camaleon: return 300;
+        }
+        return 0;
+    }
+
+    // mult = min(8, 1 + combo / 6)
+    int multiplicadorPuntos(int combo)
+    {
+        int mult = 1 + combo / 6;
+        return mult > 8 ? 8 : mult;
+    }
+
+    Enemigo crearEnemigoDesdeSpawn(const Spawn& sp, int oleada)
     {
         Enemigo e;
         e.id = proximoIdEnemigo++;
@@ -48,77 +86,67 @@ namespace {
         e.color = sp.color;
         e.r = 300.0;
         e.theta = static_cast<double>(sp.angulo);
-        e.omega = static_cast<double>((sp.sentido == 0 ? 1 : sp.sentido)) * 2.0;
+        e.omega = 0.0;
         e.vida = 1;
-        e.radio = 10;
+        e.radio = 6;
         e.ticksColor = 0;
 
-        if (e.tipo == TipoEnemigo::Tanque)
+        if (e.tipo == TipoEnemigo::Girador)
         {
-            e.vida = 3;
-            e.radio = 18;
+            const double w = 0.9 + 0.05 * oleada;
+            e.omega = (sp.sentido == 0) ? -w : w; // sentido 0 = horario (theta decrece)
         }
         else if (e.tipo == TipoEnemigo::Divisor)
         {
-            e.vida = 2;
-            e.radio = 14;
+            e.radio = 8;
         }
         else if (e.tipo == TipoEnemigo::Mini)
         {
-            e.omega *= 2.0;
-            e.radio = 8;
+            e.radio = 4;
+        }
+        else if (e.tipo == TipoEnemigo::Tanque)
+        {
+            e.vida = 3;
+            e.radio = 10;
         }
         else if (e.tipo == TipoEnemigo::Camaleon)
         {
-            e.color = 0;
+            e.radio = 7;
         }
 
         return e;
     }
 
-    void moverEnemigo(Enemigo& enemigo)
+    void moverEnemigo(Enemigo& e, int oleada)
     {
-        switch (enemigo.tipo)
+        e.r -= velocidadEnemigo(e.tipo, oleada);
+
+        if (e.tipo == TipoEnemigo::Girador || e.tipo == TipoEnemigo::Mini)
         {
-            case TipoEnemigo::Dron:
-                enemigo.r -= 1.4;
-                break;
-            case TipoEnemigo::Girador:
-                enemigo.r -= 1.2;
-                enemigo.theta = normalizarAngulo(enemigo.theta + enemigo.omega);
-                break;
-            case TipoEnemigo::Divisor:
-                enemigo.r -= 1.1;
-                break;
-            case TipoEnemigo::Mini:
-                enemigo.r -= 1.6;
-                enemigo.theta = normalizarAngulo(enemigo.theta + enemigo.omega);
-                break;
-            case TipoEnemigo::Tanque:
-                enemigo.r -= 0.9;
-                break;
-            case TipoEnemigo::Camaleon:
-                enemigo.r -= 1.0;
-                enemigo.ticksColor += 1;
-                if (enemigo.ticksColor >= 42)
-                {
-                    enemigo.color = (enemigo.color + 1) % 3;
-                    enemigo.ticksColor = 0;
-                }
-                break;
-            default:
-                enemigo.r -= 1.0;
-                break;
+            e.theta = normalizarAngulo(e.theta + e.omega);
+        }
+        else if (e.tipo == TipoEnemigo::Camaleon)
+        {
+            e.ticksColor += 1;
+            if (e.ticksColor >= 42)
+            {
+                e.color = (e.color + 1) % 3; // C -> M -> A -> C
+                e.ticksColor = 0;
+            }
         }
     }
 
-    void daniarNucleo(Motor& motor)
+    void daniarNucleo(Motor& motor, int dano)
     {
         if (motor.jugadorActual == nullptr)
             return;
 
         if (motor.jugadorActual->vidaNucleo > 0)
-            motor.jugadorActual->vidaNucleo -= 10;
+        {
+            motor.jugadorActual->vidaNucleo -= dano;
+            if (motor.jugadorActual->vidaNucleo < 0)
+                motor.jugadorActual->vidaNucleo = 0;
+        }
         motor.jugadorActual->combo = 0;
         motor.evDanoNucleo = true;
     }
@@ -189,14 +217,16 @@ void inicializarMotor(Motor& m)
 {
     m.jugadorActual = nullptr;
     m.tickActual = 0;
+    m.oleadaActual = 1;
     m.anguloNave = 270.0;
     inicializarCola(m.colaSpawnOleada);
     reiniciarAccionesYEventos(m);
 }
 
-void iniciarTurnoMotor(Motor& m, Jugador* nuevoJugador, ColaSpawn colaOleada)
+void iniciarTurnoMotor(Motor& m, Jugador* nuevoJugador, ColaSpawn colaOleada, int oleada)
 {
     m.jugadorActual = nuevoJugador;
+    m.oleadaActual = oleada;
     copiarCola(colaOleada, m.colaSpawnOleada);
     m.tickActual = 0;
     m.anguloNave = 270.0;
@@ -250,7 +280,7 @@ void procesarTickMotor(Motor& m, int nuevoColor)
             break;
 
         desencolar(m.colaSpawnOleada, spawnActual);
-        m.listaEnemigos.insertarFinal(crearEnemigoDesdeSpawn(spawnActual));
+        m.listaEnemigos.insertarFinal(crearEnemigoDesdeSpawn(spawnActual, m.oleadaActual));
     }
 
     if ((m.tickActual % 4) == 0)
@@ -267,20 +297,42 @@ void procesarTickMotor(Motor& m, int nuevoColor)
         m.evDisparo = true;
     }
 
+    // Paso 5: mover enemigos (y cambiar el color de los Camaleones)
     NodoEnemigo* enemigoActual = m.listaEnemigos.primero();
     while (enemigoActual != nullptr)
     {
-        NodoEnemigo* siguiente = enemigoActual->sig;
-        moverEnemigo(enemigoActual->dato);
+        moverEnemigo(enemigoActual->dato, m.oleadaActual);
+        enemigoActual = enemigoActual->sig;
+    }
 
-        if (enemigoActual->dato.r > RADIO_NUCLEO)
+    // Paso 6: choques enemigo-nave y enemigo-nucleo
+    double naveX = 0.0;
+    double naveY = 0.0;
+    posicionPolarACartesiana(RADIO_ANILLO, m.anguloNave, naveX, naveY);
+
+    enemigoActual = m.listaEnemigos.primero();
+    while (enemigoActual != nullptr)
+    {
+        const Enemigo& e = enemigoActual->dato;
+        double ex = 0.0;
+        double ey = 0.0;
+        posicionPolarACartesiana(e.r, e.theta, ex, ey);
+        const double distNave = std::sqrt((ex - naveX) * (ex - naveX) + (ey - naveY) * (ey - naveY));
+
+        if (distNave < static_cast<double>(e.radio + 5))
         {
-            enemigoActual = siguiente;
-            continue;
+            daniarNucleo(m, 12);
+            enemigoActual = m.listaEnemigos.eliminar(enemigoActual);
         }
-
-        daniarNucleo(m);
-        enemigoActual = m.listaEnemigos.eliminar(enemigoActual);
+        else if (e.r <= RADIO_NUCLEO + 0.4 * e.radio)
+        {
+            daniarNucleo(m, e.tipo == TipoEnemigo::Tanque ? 22 : 10);
+            enemigoActual = m.listaEnemigos.eliminar(enemigoActual);
+        }
+        else
+        {
+            enemigoActual = enemigoActual->sig;
+        }
     }
 
     NodoBala* balaActual = m.listaBalas.cabeza;
@@ -308,9 +360,9 @@ void procesarTickMotor(Motor& m, int nuevoColor)
                     if (enemigoColision->dato.vida <= 0)
                     {
                         registrarBaja(m, enemigoColision->dato);
-                        m.jugadorActual->puntaje += 25;
+                        m.jugadorActual->puntaje += puntosDelTipo(enemigoColision->dato.tipo) * multiplicadorPuntos(m.jugadorActual->combo);
                         m.jugadorActual->combo += 1;
-                        m.jugadorActual->cargaPulso = m.jugadorActual->cargaPulso + 10;
+                        m.jugadorActual->cargaPulso += (enemigoColision->dato.tipo == TipoEnemigo::Tanque) ? 14 : 5;
                         if (m.jugadorActual->cargaPulso > 100)
                             m.jugadorActual->cargaPulso = 100;
 
@@ -359,7 +411,7 @@ void procesarTickMotor(Motor& m, int nuevoColor)
             }
         }
 
-        if (distancia > 720.0 || std::fabs(bala.x) > 700.0 || std::fabs(bala.y) > 560.0 || impacto)
+        if (distancia > RADIO_BORRADO_BALA || impacto)
         {
             NodoBala* anterior = nullptr;
             NodoBala* actual = m.listaBalas.cabeza;
@@ -393,7 +445,7 @@ void procesarTickMotor(Motor& m, int nuevoColor)
             NodoEnemigo* sigPulso = pulsoActual->sig;
             if (std::fabs(pulsoActual->dato.r - m.ondaR) < static_cast<double>(pulsoActual->dato.radio + 3))
             {
-                m.jugadorActual->puntaje += 15; // TODO reglas: puntos del tipo x multiplicador
+                m.jugadorActual->puntaje += puntosDelTipo(pulsoActual->dato.tipo) * multiplicadorPuntos(m.jugadorActual->combo); // TODO reglas: puntos del tipo x multiplicador
                 registrarBaja(m, pulsoActual->dato);
                 m.listaEnemigos.eliminar(pulsoActual);
             }

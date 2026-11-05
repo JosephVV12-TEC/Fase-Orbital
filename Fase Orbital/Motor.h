@@ -14,17 +14,18 @@ struct PuntoBaja
 
 struct Motor 
 {
-    Jugador* jugadorActual;      // Un puntero al jugador que está jugando
+    Jugador* jugadorActual;// Un puntero al jugador que está jugando
     ListaEnemigos listaEnemigos;
     ListaBalas listaBalas;
     ColaSpawn colaSpawnOleada;
 
     int tickActual;
+    int oleadaActual;        // numero de la oleada que se esta jugando (define la velocidad)
     double anguloNave;
 
     // ---- Acciones: las escribe la vista / el bot ANTES de cada tick ----
-    double anguloObjetivo;   // hacia donde debe girar la nave (max 6 grados por tick)
-    bool pulsoSolicitado;    // true = el jugador pidio activar el pulso
+    double anguloObjetivo;// hacia donde debe girar la nave (max 6 grados por tick)
+    bool pulsoSolicitado; // true = el jugador pidio activar el pulso
 
     // ---- Onda de pulso (la vista solo la dibuja) ----
     bool ondaActiva;
@@ -40,6 +41,6 @@ struct Motor
 };
 
 // Funciones básicas del motor
-void inicializarMotor(Motor& m);
+void iniciarTurnoMotor(Motor& m, Jugador* nuevoJugador, ColaSpawn colaOleada, int oleada);
 void iniciarTurnoMotor(Motor& m, Jugador* nuevoJugador, ColaSpawn colaOleada);
 void procesarTickMotor(Motor& m, int nuevoColor);

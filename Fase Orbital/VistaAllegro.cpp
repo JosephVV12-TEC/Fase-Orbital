@@ -1,7 +1,7 @@
 // VistaAllegro.cpp
 // Ventana, dibujo, controles, pantallas y audio de Fase Orbital (Allegro 5).
 //
-// IMPORTANTE: este archivo NO debe incluir "Juego.h" ni "FuncionesJuego.h"
+// IMPORTANTE PARA SI ALGUNO VA A MODIFICAR EL CODIGO: este archivo NO debe incluir "Juego.h" ni "FuncionesJuego.h"
 // (esos headers traen definiciones de funciones y solo pueden compilarse en UN .cpp).
 
 #include "VistaAllegro.h"
@@ -30,20 +30,20 @@ using namespace std;
 
 namespace
 {
-    // ------------------------------------------------------------------
-    // Constantes
-    // ------------------------------------------------------------------
-    const int   PANTALLA_W = 1000;               // minimo exigido: 800 x 600
+    
+    // Constantes (NO TOCAR)
+    
+    const int   PANTALLA_W = 1000; // minimo exigido: 800 x 600
     const int   PANTALLA_H = 720;
-    const float CX = PANTALLA_W / 2.0f;          // el nucleo esta en el centro
+    const float CX = PANTALLA_W / 2.0f; // el nucleo esta en el centro
     const float CY = PANTALLA_H / 2.0f;
     const double PI_ = 3.14159265358979323846;
 
-    const double RADIO_ANILLO = 100.0;           // orbita de la nave (seccion 3.1)
-    const double RADIO_CAMPO = 320.0;            // borde del campo de juego
+    const double RADIO_ANILLO = 100.0; // orbita de la nave (seccion 3.1)
+    const double RADIO_CAMPO = 320.0; // borde del campo de juego
 
-    const int TICKS_ANUNCIO = 75;                // 2.5 s de anuncio de turno
-    const int TICKS_RESUMEN_BOT = 90;            // 3 s si el que jugo fue un bot
+    const int TICKS_ANUNCIO = 75; // 2.5 s de anuncio de turno
+    const int TICKS_RESUMEN_BOT = 90; // 3 s si el que jugo fue un bot
 
     const unsigned int SEMILLA_DEFECTO = 42;
     const int LIMITE_OLEADAS_DEFECTO = 10;
@@ -124,9 +124,9 @@ namespace
         int destelloPulso = 0;
     };
 
-    // ------------------------------------------------------------------
-    // Utilidades
-    // ------------------------------------------------------------------
+    
+	// Utilidades (Aca hay que poner todas las funciones que se van a usar en el juego, para que no se vea tan desordenado el Fase Orbital)
+  
     double normalizar(double a)
     {
         while (a < 0.0) a += 360.0;
@@ -134,7 +134,7 @@ namespace
         return a;
     }
 
-    double aRadianes(double grados) { return grados * PI_ / 180.0; }
+	double aRadianes(double grados) { return grados * PI_ / 180.0; } //Para convertir de grados a radianes porque las funciones de trigonometria usan radianes y no grados
 
     ALLEGRO_COLOR colorFase(int c)
     {
@@ -172,9 +172,9 @@ namespace
         return m > 8 ? 8 : m;
     }
 
-    // ------------------------------------------------------------------
-    // Recursos
-    // ------------------------------------------------------------------
+    
+	// Recursos (Cosas como cargar fuentes, sonidos, inicializar Allegro, etc)
+    
     ALLEGRO_FONT* cargarFuente(int tam)
     {
         static bool avisado = false;
@@ -287,9 +287,7 @@ namespace
             al_play_sample(s, 0.7f, 0.0f, 1.0f, ALLEGRO_PLAYMODE_ONCE, nullptr);
     }
 
-    // ------------------------------------------------------------------
-    // Particulas (efecto en cada baja)
-    // ------------------------------------------------------------------
+    // Particulas (efecto en cada baja, es basicamente donde se crean)
     void crearExplosion(Vista& v, double r, double theta, int color)
     {
         const float x = CX + static_cast<float>(cos(aRadianes(theta)) * r);
@@ -328,9 +326,9 @@ namespace
         if (v.destelloPulso > 0) --v.destelloPulso;
     }
 
-    // ------------------------------------------------------------------
+    
     // Flujo entre pantallas
-    // ------------------------------------------------------------------
+    
     void irAlMenu(Vista& v)
     {
         v.pantalla = Pantalla::Menu;
@@ -387,9 +385,9 @@ namespace
         v.ticksPantalla = 0;
     }
 
-    // ------------------------------------------------------------------
+    
     // Controles del jugador humano -> acciones para el Motor
-    // ------------------------------------------------------------------
+    
     void aplicarControlesHumano(Vista& v)
     {
         Motor& m = v.motor;

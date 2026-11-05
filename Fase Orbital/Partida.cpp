@@ -78,7 +78,7 @@ void iniciarTurnoActual(Partida& p, Motor& m)
         p.oleadaAlcanzada[i] = p.oleada;
 
     // El Motor hace una copia profunda de la cola, la original queda intacta
-    iniciarTurnoMotor(m, j, p.colaOleada);
+    iniciarTurnoMotor(m, j, p.colaOleada, p.oleada);
 }
 
 // Orden por puntaje; empate: mayor oleada alcanzada.
