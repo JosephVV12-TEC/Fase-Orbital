@@ -377,6 +377,7 @@ namespace
     {
         if (v.resultado == ResultadoTurno::PartidaTerminada)
         {
+            imprimirReportePartida(v.partida, cout);
             v.pantalla = Pantalla::FinPartida;
             return;
         }
@@ -452,9 +453,12 @@ namespace
         procesarTickMotor(m, color);
         reaccionarAEventos(v);
 
-        if (j->vidaNucleo <= 0)
+        const ResultadoTick res = procesarTickMotor(m, color);
+        reaccionarAEventos(v);
+
+        if (res == ResultadoTick::NucleoDestruido)
             finalizarTurno(v, false);
-        else if (colaVacia(m.colaSpawnOleada) && m.listaEnemigos.vacia())
+        else if (res == ResultadoTick::OleadaCompleta)
             finalizarTurno(v, true);
     }
 
@@ -479,9 +483,9 @@ namespace
         actualizarParticulas(v);
     }
 
-    // ------------------------------------------------------------------
+
     // Entrada de teclado por pantalla
-    // ------------------------------------------------------------------
+    
     bool aliasRepetido(const Vista& v, const string& alias)
     {
         for (int i = 0; i < v.partida.cantidad; ++i)
@@ -696,7 +700,7 @@ namespace
         const double ang = aRadianes(e.theta);
         const float ex = CX + static_cast<float>(cos(ang) * e.r);
         const float ey = CY + static_cast<float>(sin(ang) * e.r);
-        const float rad = static_cast<float>(e.radio);
+        const float rad = static_cast<float>(e.radio) * 2.0f; // solo para dibujar; la colision sigue usando e.radio
         const double haciaNucleo = ang + PI_; // las formas apuntan al nucleo
         const ALLEGRO_COLOR c = colorFase(e.color);
 
@@ -738,7 +742,7 @@ namespace
             const float bx = CX + static_cast<float>(b->dato.x);
             const float by = CY + static_cast<float>(b->dato.y);
             const ALLEGRO_COLOR c = colorFase(b->dato.color);
-            al_draw_line(bx, by, bx - static_cast<float>(b->dato.vx) * 1.5f, by - static_cast<float>(b->dato.vy) * 1.5f, conAlfa(c, 0.6f), 2.0f);
+            al_draw_line(bx, by, bx - static_cast<float>(b->dato.vx) * 0.6f, by - static_cast<float>(b->dato.vy) * 1.5f, conAlfa(c, 0.6f), 2.0f);
             al_draw_filled_circle(bx, by, 3.0f, c);
         }
     }

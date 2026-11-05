@@ -52,11 +52,11 @@ struct ListaEnemigos
 	// Desconecta y libera el nodo en O(1); devuelve el nodo que le seguia.
 	NodoEnemigo* eliminar(NodoEnemigo* n);
 	// Devuelve el primer o ultimo nodo sin modificar la lista.
-	NodoEnemigo* primero();
-	NodoEnemigo* ultimo();
+	NodoEnemigo* primero() const;
+	NodoEnemigo* ultimo() const;
 	// Devuelve la cantidad de nodos y permite consultar si esta vacia.
-	int tamano();
-	bool vacia();
+	int tamano() const;
+	bool vacia() const;
 	//Elimina un enemigo si colisiona con una bala de ese color
 	// Recorre la lista y elimina todos los enemigos con el codigo de color indicado.
 	void eliminarSi(int color);

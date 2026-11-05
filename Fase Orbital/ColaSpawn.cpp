@@ -1,5 +1,26 @@
 #include "ColaSpawn.h"
 
+// Esto es la implementacion de las funciones de la cola de spawns, que son las funciones que se van a usar para manejar la cola de enemigos que se van a ir apareciendo en el juego
+ColaSpawn::ColaSpawn() : frente(NULL), final(NULL), tam(0)
+{
+}
+
+ColaSpawn::~ColaSpawn()
+{
+    vaciarCola(*this);
+}
+
+ColaSpawn::ColaSpawn(const ColaSpawn& otra) : frente(NULL), final(NULL), tam(0)
+{
+    copiarCola(otra, *this);
+}
+
+ColaSpawn& ColaSpawn::operator=(const ColaSpawn& otra)
+{
+    copiarCola(otra, *this);
+    return *this;
+}
+
 //Deja la cola vacia porque si no puede tener basura en el frente y final, y en tamano 
 void inicializarCola(ColaSpawn& c) 
 {
@@ -62,7 +83,7 @@ PtrSpawn verFrente(ColaSpawn& c)
     return &(c.frente->dato);
 }
 
-bool colaVacia(ColaSpawn& c) {
+bool colaVacia(const ColaSpawn& c) {
     return c.tam == 0;
 }
 
@@ -82,11 +103,11 @@ void vaciarCola(ColaSpawn& c) {
 }
 
 //En palabras simples, esta funcion copia el contenido de una cola a otra, creando nuevos nodos para cada elemento. Esto es útil para duplicar la cola sin modificar la original
-void copiarCola(ColaSpawn& origen, ColaSpawn& destino)
+void copiarCola(const ColaSpawn& origen, ColaSpawn& destino)
 {
 
     //Si es la misma cola, no hay nada que copiar y asi se optimiza
-    if (origen.frente == destino.frente)
+    if (&origen == &destino)
     {
         return;
     }

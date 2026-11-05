@@ -1,5 +1,15 @@
 #include "RondaJugadores.h"
 
+//Esto es la implementacion de las funciones de la ronda de jugadores
+RondaJugadores::RondaJugadores() : actual(NULL), tam(0)
+{
+}
+
+RondaJugadores::~RondaJugadores()
+{
+    vaciarRonda(*this);
+}
+
 void inicializarRonda(RondaJugadores& r) 
 {
     r.actual = NULL;

@@ -8,13 +8,6 @@
 #include <cmath>
 
 //Librerias de Allegro
-#include <allegro5/allegro.h>
-#include <allegro5/allegro_ttf.h>
-#include <allegro5/allegro_font.h>
-#include <allegro5/allegro_primitives.h>
-#include <allegro5/allegro_image.h>
-#include <allegro5/allegro_audio.h>
-#include <allegro5/allegro_acodec.h>
 #include "ListaEnemigos.h"
 #include "ListaBalas.h"
 
@@ -114,22 +107,22 @@ NodoEnemigo* ListaEnemigos::eliminar(NodoEnemigo* n)
 }
 
 // Accesores para recorrer la lista desde cada extremo.
-NodoEnemigo* ListaEnemigos::primero()
+NodoEnemigo* ListaEnemigos::primero() const
 {
 	return cabeza;
 }
 
-NodoEnemigo* ListaEnemigos::ultimo()
+NodoEnemigo* ListaEnemigos::ultimo() const
 {
 	return cola;
 }
 
-int ListaEnemigos::tamano()
+int ListaEnemigos::tamano() const
 {
 	return tam;
 }
 
-bool ListaEnemigos::vacia()
+bool ListaEnemigos::vacia() const
 {
 	return tam == 0;
 }
@@ -178,30 +171,4 @@ void ListaBalas::insertarInicio(const Bala& b)
 	++tam;
 }
 
-template <class Pred>
-int ListaBalas::eliminarSi(Pred debeEliminarse)
-{
-	// actual apunta al puntero que enlaza el siguiente nodo, incluida cabeza.
-	NodoBala** actual = &cabeza;
-	int eliminadas = 0;
-	while (*actual != NULL)
-	{
-		if (debeEliminarse((*actual)->dato))
-		{
-			// Salta el nodo coincidente, libera su memoria y no avanza el enlace.
-			NodoBala* eliminado = *actual;
-			*actual = eliminado->sig;
-			delete eliminado;
-			--tam;
-			++eliminadas;
-		}
-		else
-		{
-			// Avanza al campo sig del nodo que se conserva.
-			NodoBala* nodoActual = *actual;
-			actual = &nodoActual->sig;
-		}
-	}
-	return eliminadas;
-}
 

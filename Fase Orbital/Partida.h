@@ -2,6 +2,7 @@
 // NO usa Allegro: la vista solo la consulta y le avisa cuando termina un turno.
 #pragma once
 #include <string>
+#include <ostream>
 #include "Jugador.h"
 #include "RondaJugadores.h"
 #include "ColaSpawn.h"
@@ -23,6 +24,7 @@ struct Partida
     int cantidad;// cuantos se registraron
     RondaJugadores ronda;// lista circular doble: solo los que siguen vivos
     ColaSpawn colaOleada;// cola ORIGINAL de la oleada (cada turno juega una copia)
+    BitacoraEventos bitacora;// eventos de TODA la partida
     unsigned int semilla;
     int oleada;
     int limiteOleadas;
@@ -41,3 +43,5 @@ void iniciarTurnoActual(Partida& p, Motor& m);
 ResultadoTurno terminarTurno(Partida& p, bool oleadaCompletada);
 int indiceDeJugador(const Partida& p, const Jugador* j);
 void calcularPosiciones(const Partida& p, int orden[MAX_JUGADORES]);
+// Imprime posiciones, metricas por jugador y la linea de tiempo por oleada, en resyumen lee la bitacora
+void imprimirReportePartida(const Partida& p, std::ostream& os);

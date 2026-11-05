@@ -21,13 +21,13 @@ struct Generador
  	// Inicializa el estado con la semilla indicada.
  	Generador(uint32_t semilla)
  	{
- 		x = semilla == 0 ? 1u : semilla;
+        x = semilla;
  	}
  
  	// Avanza el estado y devuelve el siguiente valor pseudoaleatorio.
  	uint32_t siguiente()
  	{
- 		x = x * 1664525u + 1013904223u;
+        x = (1103515245u * x + 12345u) & 0x7FFFFFFFu;
  		return x;
  	}
 };

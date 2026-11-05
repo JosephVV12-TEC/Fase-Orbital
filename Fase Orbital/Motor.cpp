@@ -39,6 +39,12 @@ namespace {
         motor.anguloNave = normalizarAngulo(motor.anguloNave + delta);
     }
 
+    // Predicado para ListaBalas::eliminarSi: borra las balas que ya impactaron o salieron
+    bool balaInactiva(const Bala& b)
+    {
+        return b.inactiva;
+    }
+
     int proximoIdEnemigo = 1;
 
     // v = 0.8 + 0.08*n, multiplicada por el factor de cada tipo (seccion 3.3)
@@ -71,12 +77,6 @@ namespace {
         return 0;
     }
 
-    // mult = min(8, 1 + combo / 6)
-    int multiplicadorPuntos(int combo)
-    {
-        int mult = 1 + combo / 6;
-        return mult > 8 ? 8 : mult;
-    }
 
     Enemigo crearEnemigoDesdeSpawn(const Spawn& sp, int oleada)
     {
@@ -136,18 +136,40 @@ namespace {
         }
     }
 
-    void daniarNucleo(Motor& motor, int dano)
+    // Agrega un evento a la bitacora (si el Motor tiene una)
+    void registrarEvento(Motor& m, TipoEvento tipo, int tipoEnemigo, int color, int valor)
+    {
+        if (m.bitacora == nullptr)
+            return;
+
+        Evento ev;
+        ev.tick = m.tickActual;
+        ev.oleada = m.oleadaActual;
+        ev.jugador = m.idJugador;
+        ev.tipo = tipo;
+        ev.tipoEnemigo = tipoEnemigo;
+        ev.color = color;
+        ev.valor = valor;
+        agregarFinal(*m.bitacora, ev);
+    }
+
+    // Dana al nucleo (por llegar al nucleo o por chocar con la nave) lo cuenta en las estadisticas
+    void daniarNucleo(Motor& motor, const Enemigo& enemigo, int dano, TipoEvento tipoEvento)
     {
         if (motor.jugadorActual == nullptr)
             return;
 
-        if (motor.jugadorActual->vidaNucleo > 0)
+        Jugador& j = *motor.jugadorActual;
+        if (j.vidaNucleo > 0)
         {
-            motor.jugadorActual->vidaNucleo -= dano;
-            if (motor.jugadorActual->vidaNucleo < 0)
-                motor.jugadorActual->vidaNucleo = 0;
+            j.vidaNucleo -= dano;
+            if (j.vidaNucleo < 0)
+                j.vidaNucleo = 0;
+            j.est.danoTotal += dano;
+            j.est.danoTipo[static_cast<int>(enemigo.tipo)] += dano;
+            registrarEvento(motor, tipoEvento, static_cast<int>(enemigo.tipo), enemigo.color, dano);
         }
-        motor.jugadorActual->combo = 0;
+        j.combo = 0;
         motor.evDanoNucleo = true;
     }
 
@@ -167,6 +189,29 @@ namespace {
             m.bajas[m.nBajas].theta = e.theta;
             m.bajas[m.nBajas].color = e.color;
             m.nBajas += 1;
+        }
+    }
+
+    // Suma los puntos de una baja y la cuenta en las estadisticas
+    // porPulso = true: no sube el combo ni la carga del pulso
+    void contarBaja(Motor& m, const Enemigo& e, bool porPulso)
+    {
+        Jugador& j = *m.jugadorActual;
+        const int puntos = puntosDelTipo(e.tipo) * multiplicadorPuntos(j.combo);
+        j.puntaje += puntos;
+        j.est.bajasTipo[static_cast<int>(e.tipo)] += 1;
+        j.est.bajasColor[e.color] += 1;
+        registrarBaja(m, e);
+        registrarEvento(m, TipoEvento::BAJA, static_cast<int>(e.tipo), e.color, puntos);
+
+        if (!porPulso)
+        {
+            j.combo += 1;
+            if (j.combo > j.est.comboMax)
+                j.est.comboMax = j.combo;
+            j.cargaPulso += (e.tipo == TipoEnemigo::Tanque) ? 14 : 5;
+            if (j.cargaPulso > 100)
+                j.cargaPulso = 100;
         }
     }
 
@@ -213,20 +258,106 @@ namespace {
     }
 }
 
+// mult = min(8, 1 + combo / 6)
+int multiplicadorPuntos(int combo)
+{
+    int mult = 1 + combo / 6;
+    return mult > 8 ? 8 : mult;
+}
+
+// Aca van las funciones de la vitacora de eventos
+BitacoraEventos::BitacoraEventos() : cabeza(nullptr), cola(nullptr), tam(0)
+{
+}
+
+BitacoraEventos::~BitacoraEventos()
+{
+    vaciarBitacora(*this);
+}
+
+void agregarFinal(BitacoraEventos& b, const Evento& e)
+{
+    NodoEvento* nuevo = new NodoEvento;
+    nuevo->dato = e;
+    nuevo->sig = nullptr;
+
+    if (b.cola == nullptr)
+        b.cabeza = nuevo;
+    else
+        b.cola->sig = nuevo;
+
+    b.cola = nuevo;
+    b.tam += 1;
+}
+
+void vaciarBitacora(BitacoraEventos& b)
+{
+    while (b.cabeza != nullptr)
+    {
+        NodoEvento* aux = b.cabeza;
+        b.cabeza = b.cabeza->sig;
+        delete aux;
+    }
+    b.cola = nullptr;
+    b.tam = 0;
+}
+
+NodoEvento* siguienteEvento(NodoEvento* desde, int jugador, int oleada)
+{
+    NodoEvento* n = desde;
+    while (n != nullptr)
+    {
+        if ((jugador < 0 || n->dato.jugador == jugador) && (oleada < 0 || n->dato.oleada == oleada))
+            return n;
+        n = n->sig;
+    }
+    return nullptr;
+}
+
+int contarEventos(const BitacoraEventos& b, int jugador, int oleada, TipoEvento tipo)
+{
+    int total = 0;
+    NodoEvento* n = siguienteEvento(b.cabeza, jugador, oleada);
+    while (n != nullptr)
+    {
+        if (n->dato.tipo == tipo)
+            total += 1;
+        n = siguienteEvento(n->sig, jugador, oleada);
+    }
+    return total;
+}
+
+int sumarValorEventos(const BitacoraEventos& b, int jugador, int oleada, TipoEvento tipo)
+{
+    int suma = 0;
+    NodoEvento* n = siguienteEvento(b.cabeza, jugador, oleada);
+    while (n != nullptr)
+    {
+        if (n->dato.tipo == tipo)
+            suma += n->dato.valor;
+        n = siguienteEvento(n->sig, jugador, oleada);
+    }
+    return suma;
+}
+
 void inicializarMotor(Motor& m)
 {
     m.jugadorActual = nullptr;
     m.tickActual = 0;
     m.oleadaActual = 1;
+    m.idJugador = -1;
+    m.bitacora = nullptr;
     m.anguloNave = 270.0;
     inicializarCola(m.colaSpawnOleada);
     reiniciarAccionesYEventos(m);
 }
 
-void iniciarTurnoMotor(Motor& m, Jugador* nuevoJugador, ColaSpawn colaOleada, int oleada)
+void iniciarTurnoMotor(Motor& m, Jugador* nuevoJugador, const ColaSpawn& colaOleada, int oleada, int idJugador, BitacoraEventos* bitacora)
 {
     m.jugadorActual = nuevoJugador;
     m.oleadaActual = oleada;
+    m.idJugador = idJugador;
+    m.bitacora = bitacora;
     copiarCola(colaOleada, m.colaSpawnOleada);
     m.tickActual = 0;
     m.anguloNave = 270.0;
@@ -240,19 +371,20 @@ void iniciarTurnoMotor(Motor& m, Jugador* nuevoJugador, ColaSpawn colaOleada, in
     }
 }
 
-void procesarTickMotor(Motor& m, int nuevoColor)
+ResultadoTick procesarTickMotor(Motor& m, int nuevoColor)
 {
     m.evDisparo = false;
+    m.jugadorActual->est.disparos += 1;
     m.evErroneo = false;
     m.evDanoNucleo = false;
     m.evPulso = false;
     m.nBajas = 0;
 
     if (m.jugadorActual == nullptr)
-        return;
+        return ResultadoTick::Sigue;
 
     if (m.jugadorActual->vidaNucleo <= 0)
-        return;
+        return ResultadoTick::NucleoDestruido;
 
     if (nuevoColor >= 0 && nuevoColor <= 2)
         m.jugadorActual->colorActivo = nuevoColor;
@@ -260,13 +392,21 @@ void procesarTickMotor(Motor& m, int nuevoColor)
     aplicarRotacionNave(m, m.anguloObjetivo);
 
     // Activar pulso: solo con carga = 100 y si la vista/bot lo pidio (seccion 3.4)
+        // Activar pulso: solo con carga = 100 y si la vista/bot lo pidio (seccion 3.4)
     if (m.pulsoSolicitado && !m.ondaActiva && m.jugadorActual->cargaPulso >= 100)
     {
         m.jugadorActual->cargaPulso = 0;
         m.ondaActiva = true;
         m.ondaR = 20.0;
         m.evPulso = true;
+        m.jugadorActual->est.pulsos += 1;                 
+        registrarEvento(m, TipoEvento::PULSO, -1, -1, 0); 
     }
+    m.pulsoSolicitado = false;
+
+    m.tickActual += 1;
+    m.jugadorActual->est.ticks += 1;
+
     m.pulsoSolicitado = false;
 
     m.tickActual += 1;
@@ -321,12 +461,12 @@ void procesarTickMotor(Motor& m, int nuevoColor)
 
         if (distNave < static_cast<double>(e.radio + 5))
         {
-            daniarNucleo(m, 12);
+            daniarNucleo(m, e, 12, TipoEvento::CHOQUE_NAVE);
             enemigoActual = m.listaEnemigos.eliminar(enemigoActual);
         }
         else if (e.r <= RADIO_NUCLEO + 0.4 * e.radio)
         {
-            daniarNucleo(m, e.tipo == TipoEnemigo::Tanque ? 22 : 10);
+            daniarNucleo(m, e, e.tipo == TipoEnemigo::Tanque ? 22 : 10, TipoEvento::DANO_NUCLEO);
             enemigoActual = m.listaEnemigos.eliminar(enemigoActual);
         }
         else
@@ -347,50 +487,26 @@ void procesarTickMotor(Motor& m, int nuevoColor)
         bool impacto = false;
 
         NodoEnemigo* enemigoColision = m.listaEnemigos.primero();
-        while (enemigoColision != nullptr && !impacto)
+        while (enemigoColision != nullptr && !impacto && distancia <= RADIO_BORRADO_BALA) //Esto hace que si la bala pasa r = 320 y no impacta que se borre
         {
             if (balaImpactaEnemigo(bala, enemigoColision->dato))
             {
                 impacto = true;
+                m.jugadorActual->est.impactosFase[bala.color] += 1;
 
                 if (enemigoColision->dato.color == bala.color)
                 {
+                    m.jugadorActual->est.correctos += 1;
+                    m.jugadorActual->est.correctosFase[bala.color] += 1;
                     enemigoColision->dato.vida -= 1;
 
                     if (enemigoColision->dato.vida <= 0)
                     {
-                        registrarBaja(m, enemigoColision->dato);
-                        m.jugadorActual->puntaje += puntosDelTipo(enemigoColision->dato.tipo) * multiplicadorPuntos(m.jugadorActual->combo);
-                        m.jugadorActual->combo += 1;
-                        m.jugadorActual->cargaPulso += (enemigoColision->dato.tipo == TipoEnemigo::Tanque) ? 14 : 5;
-                        if (m.jugadorActual->cargaPulso > 100)
-                            m.jugadorActual->cargaPulso = 100;
+                        contarBaja(m, enemigoColision->dato, false);
 
                         if (enemigoColision->dato.tipo == TipoEnemigo::Divisor)
                         {
-                            Enemigo miniA = enemigoColision->dato;
-                            miniA.tipo = TipoEnemigo::Mini;
-                            miniA.id = proximoIdEnemigo++;
-                            miniA.vida = 1;
-                            miniA.radio = 4;
-                            miniA.r = enemigoColision->dato.r;
-                            miniA.theta = normalizarAngulo(enemigoColision->dato.theta - 4.0);
-                            miniA.omega = -1.7;
-                            miniA.color = (enemigoColision->dato.color + 1) % 3;
-
-                            Enemigo miniB = enemigoColision->dato;
-                            miniB.tipo = TipoEnemigo::Mini;
-                            miniB.id = proximoIdEnemigo++;
-                            miniB.vida = 1;
-                            miniB.radio = 4;
-                            miniB.r = enemigoColision->dato.r;
-                            miniB.theta = normalizarAngulo(enemigoColision->dato.theta + 4.0);
-                            miniB.omega = 1.7;
-                            miniB.color = (enemigoColision->dato.color + 2) % 3;
-
-                            NodoEnemigo* nodoMiniA = m.listaEnemigos.insertarDespues(enemigoColision, miniA);
-                            m.listaEnemigos.insertarDespues(nodoMiniA, miniB);
-                            m.listaEnemigos.eliminar(enemigoColision);
+							Enemigo miniA = enemigoColision->dato;
                         }
                         else
                         {
@@ -402,6 +518,8 @@ void procesarTickMotor(Motor& m, int nuevoColor)
                 {
                     enemigoColision->dato.r += 9.0;
                     m.jugadorActual->combo = 0;
+                    m.jugadorActual->est.erroneos += 1;
+                    registrarEvento(m, TipoEvento::IMPACTO_ERRONEO, static_cast<int>(enemigoColision->dato.tipo), bala.color, 0);
                     m.evErroneo = true;
                 }
             }
@@ -411,27 +529,14 @@ void procesarTickMotor(Motor& m, int nuevoColor)
             }
         }
 
-        if (distancia > RADIO_BORRADO_BALA || impacto)
-        {
-            NodoBala* anterior = nullptr;
-            NodoBala* actual = m.listaBalas.cabeza;
-            while (actual != nullptr && actual != balaActual)
-            {
-                anterior = actual;
-                actual = actual->sig;
-            }
-
-            if (anterior == nullptr)
-                m.listaBalas.cabeza = balaActual->sig;
-            else
-                anterior->sig = balaActual->sig;
-
-            delete balaActual;
-            m.listaBalas.tam--;
-        }
+		if (distancia > RADIO_BORRADO_BALA || impacto)// si la bala se fue del campo o impacto, se marca como inactiva para que la lista la borre
+            bala.inactiva = true;
 
         balaActual = siguienteBala;
     }
+
+    // Una sola pasada con NodoBala**: borra todas las marcadas, sin caso especial para la cabeza
+    m.listaBalas.eliminarSi(balaInactiva);
 
     // Onda de pulso (seccion 3.4): nace en r = 20, crece 12 u/tick y destruye
     // sin importar el color a todo enemigo con |r - r_onda| < radio + 3
@@ -443,10 +548,9 @@ void procesarTickMotor(Motor& m, int nuevoColor)
         while (pulsoActual != nullptr)
         {
             NodoEnemigo* sigPulso = pulsoActual->sig;
-            if (std::fabs(pulsoActual->dato.r - m.ondaR) < static_cast<double>(pulsoActual->dato.radio + 3))
+            if (fabs(pulsoActual->dato.r - m.ondaR) < static_cast<double>(pulsoActual->dato.radio + 3))
             {
-                m.jugadorActual->puntaje += puntosDelTipo(pulsoActual->dato.tipo) * multiplicadorPuntos(m.jugadorActual->combo); // TODO reglas: puntos del tipo x multiplicador
-                registrarBaja(m, pulsoActual->dato);
+                contarBaja(m, pulsoActual->dato, true);
                 m.listaEnemigos.eliminar(pulsoActual);
             }
             pulsoActual = sigPulso;
@@ -455,4 +559,18 @@ void procesarTickMotor(Motor& m, int nuevoColor)
         if (m.ondaR > 320.0)
             m.ondaActiva = false;
     }
+
+    // Paso 10: fin de turno del jugador (lo decide el Motor, no la vista)
+    if (m.jugadorActual->vidaNucleo <= 0)
+    {
+        registrarEvento(m, TipoEvento::ELIMINACION, -1, -1, m.jugadorActual->puntaje);
+        return ResultadoTick::NucleoDestruido;
+    }
+    if (colaVacia(m.colaSpawnOleada) && m.listaEnemigos.vacia())
+    {
+        registrarEvento(m, TipoEvento::FIN_OLEADA, -1, -1, m.jugadorActual->puntaje);
+        return ResultadoTick::OleadaCompleta;
+    }
+    return ResultadoTick::Sigue;
+}
 }

@@ -25,6 +25,10 @@ struct ColaSpawn //Este struct es la cola de spawns, que es basicamente una list
 	PtrNodoSpawn frente;
 	PtrNodoSpawn final;
 	int tam; // Tamaño de la cola, para saber cuántos elementos hay
+	ColaSpawn();// cola vacia
+	~ColaSpawn();// libera todos los nodos
+	ColaSpawn(const ColaSpawn& otra);// copia profunda: crea nodos nuevos
+	ColaSpawn& operator=(const ColaSpawn& otra);// copia profunda
 };
 //ColaSpawn y NodoSpawn se diferencian en que Cola es el que tiene el frente y el final de la lista, mientras que Nodo es el que tiene el dato y el siguiente, que es el que se va a ir moviendo en la lista es como poner una dentro de otra
 
@@ -36,6 +40,6 @@ void inicializarCola(ColaSpawn& c);
 void encolar(ColaSpawn& c, Spawn s);
 bool desencolar(ColaSpawn& c, Spawn& salida);
 PtrSpawn verFrente(ColaSpawn& c);
-bool colaVacia(ColaSpawn& c);
+bool colaVacia(const ColaSpawn& c);
 void vaciarCola(ColaSpawn& c);
-void copiarCola(ColaSpawn& origen, ColaSpawn& destino);
+void copiarCola(const ColaSpawn& origen, ColaSpawn& destino);
