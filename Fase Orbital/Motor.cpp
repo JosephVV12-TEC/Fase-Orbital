@@ -593,3 +593,4 @@ ResultadoTick procesarTickMotor(Motor& m, int nuevoColor)
     }
     return ResultadoTick::Sigue;
 }
+//
