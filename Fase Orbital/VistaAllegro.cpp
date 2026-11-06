@@ -58,6 +58,7 @@ namespace
     const char* RUTA_S_ERRONEO = "assets/sounds/erroneo.wav";
     const char* RUTA_S_DANO = "assets/sounds/dano.wav";
     const char* RUTA_S_PULSO = "assets/sounds/pulso.wav";
+    const char* RUTA_HISTORIAL = "historial.csv";
 
     enum class Pantalla
     {
@@ -88,10 +89,13 @@ namespace
         ALLEGRO_SAMPLE* sDano = nullptr;
         ALLEGRO_SAMPLE* sPulso = nullptr;
         bool audioActivo = false;
-
-        // ---- Estado del juego (la vista lo consulta, no lo decide) ----
         Motor motor;
         Partida partida;
+        HistorialPartidas historial;
+        ResumenJugador resumenes[MAX_ALIAS_HIST];
+        int nResumenes = 0;
+        int jugadorEstadistica = 0;
+        Ranking ranking;
 
         // ---- Estado propio de la interfaz ----
         Pantalla pantalla = Pantalla::Menu;
@@ -378,6 +382,8 @@ namespace
         if (v.resultado == ResultadoTurno::PartidaTerminada)
         {
             imprimirReportePartida(v.partida, cout);
+            if (!guardarPartidaEnHistorial(v.historial, v.partida, "grafico", RUTA_HISTORIAL))
+                cerr << "AVISO: no se pudo escribir " << RUTA_HISTORIAL << endl;
             v.pantalla = Pantalla::FinPartida;
             return;
         }
@@ -513,7 +519,19 @@ namespace
             v.mensajeRegistro.clear();
         }
     }
+    void prepararEstadisticas(Vista& v)
+    {
+        v.nResumenes = calcularResumenes(v.historial, v.resumenes, MAX_ALIAS_HIST);
+        v.jugadorEstadistica = 0;
+        v.pantalla = Pantalla::Estadisticas;
+    }
 
+    void prepararRanking(Vista& v)
+    {
+        v.nResumenes = calcularResumenes(v.historial, v.resumenes, MAX_ALIAS_HIST);
+        construirRanking(v.resumenes, v.nResumenes, v.ranking);
+        v.pantalla = Pantalla::Ranking;
+    }
     void teclaMenu(Vista& v, int tecla)
     {
         int opcion = -1;
@@ -528,8 +546,8 @@ namespace
         switch (opcion)
         {
             case 0: irAlRegistro(v); break;
-            case 1: v.pantalla = Pantalla::Estadisticas; break;
-            case 2: v.pantalla = Pantalla::Ranking; break;
+            case 1: prepararEstadisticas(v); break;
+            case 2: prepararRanking(v); break;
             case 3: v.ejecutando = false; break;
             default: break;
         }
@@ -610,6 +628,10 @@ namespace
                 if (tecla == ALLEGRO_KEY_ENTER || tecla == ALLEGRO_KEY_ESCAPE) irAlMenu(v);
                 break;
             case Pantalla::Estadisticas:
+                if (tecla == ALLEGRO_KEY_UP && v.jugadorEstadistica > 0) v.jugadorEstadistica--;
+                else if (tecla == ALLEGRO_KEY_DOWN && v.jugadorEstadistica < v.nResumenes - 1) v.jugadorEstadistica++;
+                else if (tecla == ALLEGRO_KEY_ENTER || tecla == ALLEGRO_KEY_ESCAPE) irAlMenu(v);
+                break;
             case Pantalla::Ranking:
                 if (tecla == ALLEGRO_KEY_ENTER || tecla == ALLEGRO_KEY_ESCAPE) irAlMenu(v);
                 break;
@@ -1025,6 +1047,117 @@ namespace
         al_draw_text(v.fuente, al_map_rgb(120, 230, 255), CX, PANTALLA_H - 70.0f, ALLEGRO_ALIGN_CENTER, "ENTER - Volver al menu");
     }
 
+    const char* NOMBRES_TIPOS[6] = { "Dron", "Girador", "Divisor", "Mini", "Tanque", "Camaleon" };
+
+    // Estadisticas historicas: tabla de jugadores + detalle e histograma del seleccionado
+    void dibujarEstadisticas(Vista& v)
+    {
+        dibujarFondo(v, 0.6f);
+        const ALLEGRO_COLOR blanco = al_map_rgb(255, 255, 255);
+        const ALLEGRO_COLOR azul = al_map_rgb(150, 180, 230);
+        al_draw_text(v.fuenteTitulo, blanco, CX, 20, ALLEGRO_ALIGN_CENTER, "ESTADISTICAS HISTORICAS");
+
+        if (v.nResumenes == 0)
+        {
+            al_draw_text(v.fuente, al_map_rgb(220, 220, 220), CX, 220, ALLEGRO_ALIGN_CENTER, "Todavia no hay partidas en historial.csv");
+            al_draw_text(v.fuente, al_map_rgb(120, 230, 255), CX, PANTALLA_H - 50.0f, ALLEGRO_ALIGN_CENTER, "ENTER - Volver al menu");
+            return;
+        }
+
+        const int FILAS = 7;
+        int inicio = 0;
+        if (v.jugadorEstadistica >= FILAS)
+            inicio = v.jugadorEstadistica - FILAS + 1;
+
+        panel(30, 80, PANTALLA_W - 30.0f, 120.0f + FILAS * 28.0f);
+        al_draw_text(v.fuentePeq, azul, 50, 90, 0, "JUGADOR");
+        al_draw_text(v.fuentePeq, azul, 300, 90, ALLEGRO_ALIGN_RIGHT, "PARTIDAS");
+        al_draw_text(v.fuentePeq, azul, 390, 90, ALLEGRO_ALIGN_RIGHT, "VICT.");
+        al_draw_text(v.fuentePeq, azul, 490, 90, ALLEGRO_ALIGN_RIGHT, "MEJOR");
+        al_draw_text(v.fuentePeq, azul, 590, 90, ALLEGRO_ALIGN_RIGHT, "PEOR");
+        al_draw_text(v.fuentePeq, azul, 700, 90, ALLEGRO_ALIGN_RIGHT, "MEDIA");
+        al_draw_text(v.fuentePeq, azul, 820, 90, ALLEGRO_ALIGN_RIGHT, "MEDIANA");
+        al_draw_text(v.fuentePeq, azul, 940, 90, ALLEGRO_ALIGN_RIGHT, "DESV.");
+
+        for (int fila = 0; fila < FILAS && inicio + fila < v.nResumenes; ++fila)
+        {
+            const int idx = inicio + fila;
+            const ResumenJugador& r = v.resumenes[idx];
+            const float y = 114.0f + fila * 28.0f;
+            const bool sel = (idx == v.jugadorEstadistica);
+            if (sel)
+                al_draw_filled_rectangle(36, y - 3, PANTALLA_W - 36.0f, y + 22, al_map_rgba(90, 80, 20, 150));
+            const ALLEGRO_COLOR c = sel ? al_map_rgb(255, 235, 120) : al_map_rgb(235, 235, 235);
+            al_draw_text(v.fuente, c, 50, y, 0, r.alias.c_str());
+            al_draw_textf(v.fuente, c, 300, y, ALLEGRO_ALIGN_RIGHT, "%d", r.partidas);
+            al_draw_textf(v.fuente, c, 390, y, ALLEGRO_ALIGN_RIGHT, "%d", r.victorias);
+            al_draw_textf(v.fuente, c, 490, y, ALLEGRO_ALIGN_RIGHT, "%d", r.mejor);
+            al_draw_textf(v.fuente, c, 590, y, ALLEGRO_ALIGN_RIGHT, "%d", r.peor);
+            al_draw_textf(v.fuente, c, 700, y, ALLEGRO_ALIGN_RIGHT, "%.0f", r.media);
+            al_draw_textf(v.fuente, c, 820, y, ALLEGRO_ALIGN_RIGHT, "%.0f", r.mediana);
+            al_draw_textf(v.fuente, c, 940, y, ALLEGRO_ALIGN_RIGHT, "%.0f", r.desviacion);
+        }
+
+        const ResumenJugador& r = v.resumenes[v.jugadorEstadistica];
+        al_draw_textf(v.fuente, blanco, 50, 330, 0, "%s: precision de color promedio %.1f%%", r.alias.c_str(), r.precisionProm * 100.0);
+        al_draw_textf(v.fuente, blanco, 50, 356, 0, "Mejor color: %s     Enemigo que mas dano le ha causado: %s",
+            r.mejorColor >= 0 ? nombreFase(r.mejorColor) : "sin datos",
+            r.tipoMasDano >= 0 ? NOMBRES_TIPOS[r.tipoMasDano] : "sin datos");
+
+        al_draw_text(v.fuentePeq, azul, 50, 395, 0, "Histograma de puntajes (10 intervalos entre el peor y el mejor)");
+        int mayor = 1;
+        for (int i = 0; i < 10; ++i)
+            if (r.histograma[i] > mayor)
+                mayor = r.histograma[i];
+        for (int i = 0; i < 10; ++i)
+        {
+            const float x = 70.0f + i * 90.0f;
+            const float alto = 190.0f * r.histograma[i] / mayor;
+            al_draw_filled_rectangle(x, 640.0f - alto, x + 70.0f, 640.0f, al_map_rgb(90, 160, 255));
+            al_draw_textf(v.fuentePeq, blanco, x + 35.0f, 640.0f - alto - 18.0f, ALLEGRO_ALIGN_CENTER, "%d", r.histograma[i]);
+            const double desde = r.peor + (r.mejor - r.peor) * i / 10.0;
+            al_draw_textf(v.fuentePeq, azul, x + 35.0f, 646.0f, ALLEGRO_ALIGN_CENTER, "%d", static_cast<int>(desde));
+        }
+        al_draw_text(v.fuentePeq, al_map_rgb(120, 230, 255), CX, PANTALLA_H - 30.0f, ALLEGRO_ALIGN_CENTER,
+            "Flechas arriba/abajo: cambiar de jugador     ENTER: volver al menu");
+    }
+
+    // Ranking top 10 (la lista ya esta ordenada por insercion ordenada)
+    void dibujarRanking(Vista& v)
+    {
+        dibujarFondo(v, 0.6f);
+        const ALLEGRO_COLOR azul = al_map_rgb(150, 180, 230);
+        al_draw_text(v.fuenteTitulo, al_map_rgb(255, 255, 255), CX, 40, ALLEGRO_ALIGN_CENTER, "RANKING TOP 10");
+        al_draw_text(v.fuentePeq, al_map_rgb(170, 190, 230), CX, 95, ALLEGRO_ALIGN_CENTER,
+            "Mejor puntaje de cada jugador. Empate: mayor precision y luego orden alfabetico");
+
+        panel(CX - 380, 130, CX + 380, 180.0f + 10 * 40.0f);
+        al_draw_text(v.fuentePeq, azul, CX - 360, 142, 0, "POS");
+        al_draw_text(v.fuentePeq, azul, CX - 300, 142, 0, "JUGADOR");
+        al_draw_text(v.fuentePeq, azul, CX + 120, 142, ALLEGRO_ALIGN_RIGHT, "PUNTAJE");
+        al_draw_text(v.fuentePeq, azul, CX + 280, 142, ALLEGRO_ALIGN_RIGHT, "PRECISION");
+
+        if (v.ranking.tam == 0)
+        {
+            al_draw_text(v.fuente, al_map_rgb(220, 220, 220), CX, 230, ALLEGRO_ALIGN_CENTER, "Todavia no hay partidas en historial.csv");
+        }
+        else
+        {
+            int posicion = 0;
+            for (const NodoRanking* n = v.ranking.cabeza; n != nullptr && posicion < 10; n = n->sig)
+            {
+                const float y = 172.0f + posicion * 40.0f;
+                const ALLEGRO_COLOR c = (posicion == 0) ? al_map_rgb(255, 235, 120) : al_map_rgb(235, 235, 235);
+                al_draw_textf(v.fuente, c, CX - 360, y, 0, "%d", posicion + 1);
+                al_draw_text(v.fuente, c, CX - 300, y, 0, n->dato.alias.c_str());
+                al_draw_textf(v.fuente, c, CX + 120, y, ALLEGRO_ALIGN_RIGHT, "%d", n->dato.puntaje);
+                al_draw_textf(v.fuente, c, CX + 280, y, ALLEGRO_ALIGN_RIGHT, "%.1f%%", n->dato.precision * 100.0);
+                posicion += 1;
+            }
+        }
+        al_draw_text(v.fuente, al_map_rgb(120, 230, 255), CX, PANTALLA_H - 50.0f, ALLEGRO_ALIGN_CENTER, "ENTER - Volver al menu");
+    }
+
     void dibujarPantalla(Vista& v)
     {
         switch (v.pantalla)
@@ -1039,12 +1172,10 @@ namespace
                 dibujarTabla(v, "FIN DE PARTIDA", "Posiciones finales", true);
                 break;
             case Pantalla::Estadisticas:
-                // TODO (modulo Estadisticas): aqui mostrar media, mediana, desviacion e histograma leidos de historial.csv
-                dibujarTabla(v, "ESTADISTICAS", "Resumen de la ultima partida de esta sesion (pendiente: conectar con historial.csv)", false);
+                dibujarEstadisticas(v);
                 break;
             case Pantalla::Ranking:
-                // TODO (modulo Ranking): aqui mostrar Ranking.top(10) construido con insercion ordenada
-                dibujarTabla(v, "RANKING TOP 10", "Posiciones de la ultima partida de esta sesion (pendiente: conectar con historial.csv)", false);
+                dibujarRanking(v);
                 break;
         }
         al_flip_display();
@@ -1058,8 +1189,9 @@ namespace
 int ejecutarVistaAllegro()
 {
     Vista v;
-    inicializarMotor(v.motor);     // antes de cualquier cosa: deja la cola de spawn en estado valido
+    inicializarMotor(v.motor);// antes de cualquier cosa: deja la cola de spawn en estado valido
     inicializarPartida(v.partida);
+    cargarHistorial(v.historial, RUTA_HISTORIAL, cerr);   // las lineas invalidas se reportan en consola
 
     int codigo = 0;
     try

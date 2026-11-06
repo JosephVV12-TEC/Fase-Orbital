@@ -11,7 +11,7 @@ struct PuntoBaja
     double theta;
     int color;
 };
-
+struct BitacoraEventos;
 struct Motor 
 {
     Jugador* jugadorActual;// Un puntero al jugador que está jugando

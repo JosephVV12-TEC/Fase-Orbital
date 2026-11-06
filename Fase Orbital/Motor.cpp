@@ -391,8 +391,8 @@ ResultadoTick procesarTickMotor(Motor& m, int nuevoColor)
 
     aplicarRotacionNave(m, m.anguloObjetivo);
 
-    // Activar pulso: solo con carga = 100 y si la vista/bot lo pidio (seccion 3.4)
-        // Activar pulso: solo con carga = 100 y si la vista/bot lo pidio (seccion 3.4)
+    // Activar pulso: solo con carga = 100 y si la vista/bot lo pidio
+     
     if (m.pulsoSolicitado && !m.ondaActiva && m.jugadorActual->cargaPulso >= 100)
     {
         m.jugadorActual->cargaPulso = 0;
@@ -407,9 +407,6 @@ ResultadoTick procesarTickMotor(Motor& m, int nuevoColor)
     m.tickActual += 1;
     m.jugadorActual->est.ticks += 1;
 
-    m.pulsoSolicitado = false;
-
-    m.tickActual += 1;
 
     // Se mira el frente SIN sacarlo; si todavia no le toca, la cola no se altera
     Spawn spawnActual;
@@ -435,6 +432,7 @@ ResultadoTick procesarTickMotor(Motor& m, int nuevoColor)
         bala.duenio = 0;
         m.listaBalas.insertarInicio(bala);
         m.evDisparo = true;
+        m.jugadorActual->est.disparos += 1;
     }
 
     // Paso 5: mover enemigos (y cambiar el color de los Camaleones)
@@ -506,7 +504,29 @@ ResultadoTick procesarTickMotor(Motor& m, int nuevoColor)
 
                         if (enemigoColision->dato.tipo == TipoEnemigo::Divisor)
                         {
-							Enemigo miniA = enemigoColision->dato;
+                            Enemigo miniA = enemigoColision->dato;
+                            miniA.tipo = TipoEnemigo::Mini;
+                            miniA.id = proximoIdEnemigo++;
+                            miniA.vida = 1;
+                            miniA.radio = 4;
+                            miniA.r = enemigoColision->dato.r;
+                            miniA.theta = normalizarAngulo(enemigoColision->dato.theta - 4.0);
+                            miniA.omega = -1.7;
+                            miniA.color = (enemigoColision->dato.color + 1) % 3;
+
+                            Enemigo miniB = enemigoColision->dato;
+                            miniB.tipo = TipoEnemigo::Mini;
+                            miniB.id = proximoIdEnemigo++;
+                            miniB.vida = 1;
+                            miniB.radio = 4;
+                            miniB.r = enemigoColision->dato.r;
+                            miniB.theta = normalizarAngulo(enemigoColision->dato.theta + 4.0);
+                            miniB.omega = 1.7;
+                            miniB.color = (enemigoColision->dato.color + 2) % 3;
+
+                            NodoEnemigo* nodoMiniA = m.listaEnemigos.insertarDespues(enemigoColision, miniA);
+                            m.listaEnemigos.insertarDespues(nodoMiniA, miniB);
+                            m.listaEnemigos.eliminar(enemigoColision);
                         }
                         else
                         {
@@ -572,5 +592,4 @@ ResultadoTick procesarTickMotor(Motor& m, int nuevoColor)
         return ResultadoTick::OleadaCompleta;
     }
     return ResultadoTick::Sigue;
-}
 }

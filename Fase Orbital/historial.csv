@@ -1,0 +1,4 @@
+id_partida,semilla,modo,jugador,es_bot,posicion,puntaje,oleada,disparos,correctos,erroneos,combo_max,pulsos,dano_total,ticks,bajas_dron,bajas_girador,bajas_divisor,bajas_mini,bajas_tanque,bajas_camaleon,impactos_c,impactos_m,impactos_a,correctos_c,correctos_m,correctos_a,dano_dron,dano_girador,dano_divisor,dano_mini,dano_tanque,dano_camaleon
+1,42,grafico,BOT1,1,1,18725,6,4653,119,26,12,1,124,3724,50,14,10,13,10,11,64,38,43,49,32,38,12,12,12,78,0,10
+2,42,grafico,Joseph,0,1,850,2,1409,8,6,2,0,114,1127,7,1,0,0,0,0,6,5,3,4,3,1,104,10,0,0,0,0
+3,42,grafico,BOT1,1,1,18725,6,4653,119,26,12,1,124,3724,50,14,10,13,10,11,64,38,43,49,32,38,12,12,12,78,0,10
