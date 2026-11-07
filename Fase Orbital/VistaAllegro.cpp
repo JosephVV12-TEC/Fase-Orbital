@@ -685,6 +685,17 @@ namespace
         al_draw_rectangle(x, y, x + w, y + h, al_map_rgb(150, 170, 200), 1.0f);
     }
 
+    // Rellena un poligono con un abanico de triangulos desde el centro.
+    // (La funcion de relleno de poligonos de Allegro no pintaba en algunas versiones: la figura salia hueca.)
+    void rellenarAbanico(float cx, float cy, const float* verts, int n, ALLEGRO_COLOR color)
+    {
+        for (int i = 0; i < n; ++i)
+        {
+            const int k = (i + 1) % n;
+            al_draw_filled_triangle(cx, cy, verts[i * 2], verts[i * 2 + 1], verts[k * 2], verts[k * 2 + 1], color);
+        }
+    }
+
     // Poligono regular (lados >= 3) centrado en (cx, cy), con borde blanco fino
     void poligono(float cx, float cy, float radio, int lados, double rot, ALLEGRO_COLOR color)
     {
@@ -695,7 +706,7 @@ namespace
             verts[i * 2] = cx + static_cast<float>(cos(a)) * radio;
             verts[i * 2 + 1] = cy + static_cast<float>(sin(a)) * radio;
         }
-        al_draw_filled_polygon(verts, lados, color);
+        rellenarAbanico(cx, cy, verts, lados, color);
         al_draw_polygon(verts, lados, ALLEGRO_LINE_JOIN_ROUND, al_map_rgb(255, 255, 255), 1.2f, 1.0f);
     }
 
@@ -710,7 +721,7 @@ namespace
             verts[i * 2] = cx + static_cast<float>(cos(a)) * rr;
             verts[i * 2 + 1] = cy + static_cast<float>(sin(a)) * rr;
         }
-        al_draw_filled_polygon(verts, 8, color);
+        rellenarAbanico(cx, cy, verts, 8, color);
         al_draw_polygon(verts, 8, ALLEGRO_LINE_JOIN_ROUND, al_map_rgb(255, 255, 255), 1.2f, 1.0f);
     }
 

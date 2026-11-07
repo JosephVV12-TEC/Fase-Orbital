@@ -374,7 +374,6 @@ void iniciarTurnoMotor(Motor& m, Jugador* nuevoJugador, const ColaSpawn& colaOle
 ResultadoTick procesarTickMotor(Motor& m, int nuevoColor)
 {
     m.evDisparo = false;
-    m.jugadorActual->est.disparos += 1;
     m.evErroneo = false;
     m.evDanoNucleo = false;
     m.evPulso = false;
