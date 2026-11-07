@@ -27,19 +27,25 @@
     <ClCompile Include="Bot.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="VistaAllegro.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Partida.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Oleada.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ModoLotes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Pruebas.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="Fase-Orbital.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Motor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="VistaAllegro.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -81,6 +87,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Motor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ModoLotes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Pruebas.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
