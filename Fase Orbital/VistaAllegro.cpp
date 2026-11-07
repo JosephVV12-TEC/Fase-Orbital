@@ -656,9 +656,8 @@ namespace
         }
     }
 
-    // ------------------------------------------------------------------
-    // Dibujo: utilidades
-    // ------------------------------------------------------------------
+    // Dibujos (NO TOCAR, DELICADO)
+
     void dibujarFondo(Vista& v, float brillo)
     {
         al_clear_to_color(al_map_rgb(5, 8, 18));
@@ -1182,10 +1181,8 @@ namespace
     }
 }
 
-// ----------------------------------------------------------------------
-// Bucle principal (seccion 7.4): cola de eventos + temporizador a 30 por segundo.
-// Cada evento del temporizador ejecuta exactamente UN tick; se dibuja solo con la cola vacia.
-// ----------------------------------------------------------------------
+
+// Bucle principal (seccion 7.4): cola de eventos + temporizador a 30 por segundo.Cada evento del temporizador ejecuta exactamente UN tick; se dibuja solo con la cola vacia.
 int ejecutarVistaAllegro()
 {
     Vista v;
