@@ -97,16 +97,22 @@ namespace
     }
 
     // ---------------- P04: ListaBalas ----------------
+    // Marca para borrar las balas de color 7, 8, 9 (cabeza y consecutivas) y 4, 3 (consecutivas en medio)
+    bool balaMarcada(const Bala& b)
+    {
+        return b.color >= 7 || b.color == 4 || b.color == 3;
+    }
+
     void p04()
     {
         ListaBalas balas;
-        for (int i = 0; i < 10; ++i)       // la ultima insertada queda en la cabeza: orden 9,8,...,0
+        for (int i = 0; i < 10; ++i)// la ultima insertada queda en la cabeza: orden 9,8,...,0
         {
             Bala b; b.color = i;
             balas.insertarInicio(b);
         }
         // Se marcan 9, 8, 7 (cabeza y consecutivas) y 4, 3 (consecutivas en medio)
-        const int eliminadas = balas.eliminarSi([](Bala& b) { return b.color >= 7 || b.color == 4 || b.color == 3; });
+        const int eliminadas = balas.eliminarSi(balaMarcada);
 
         const int esperado[5] = { 6, 5, 2, 1, 0 };
         bool ok = (eliminadas == 5) && (balas.tam == 5);

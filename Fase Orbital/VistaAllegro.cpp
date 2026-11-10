@@ -456,9 +456,6 @@ namespace
         v.colorPendiente = -1;
         v.pulsoPendiente = false;
 
-        procesarTickMotor(m, color);
-        reaccionarAEventos(v);
-
         const ResultadoTick res = procesarTickMotor(m, color);
         reaccionarAEventos(v);
 
