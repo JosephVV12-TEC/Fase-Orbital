@@ -13,9 +13,7 @@ namespace
 {
     const int MAX_TICKS_TURNO = 20000;    // seguro contra turnos que no terminan (p. ej. script que dispara siempre con otro color)
 
-    // ------------------------------------------------------------------
-    // Script de acciones (seccion 7.3): "jugador oleada tick ACCION [parametro]"
-    // ------------------------------------------------------------------
+ 
     enum class TipoAccion { Color, GirarA, Pulso };
 
     struct AccionScript
