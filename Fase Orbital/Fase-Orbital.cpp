@@ -1,11 +1,5 @@
-// Fase-Orbital.cpp - Punto de entrada: lee los argumentos y elige el modo (seccion 7.2 del PDF).
-//   faseorbital                                                    -> interfaz Allegro 5
-//   faseorbital --lotes --jugadores Ana,Luis,BOT1 --semilla 42 --oleadas 10 [--script partida.txt] [--historial h.csv]
-//   faseorbital --estadisticas historial.csv
-//   faseorbital --ranking historial.csv
-//   faseorbital --pruebas                                          -> casos P01..P14
-//   faseorbital --generar-bots 30 historial.csv                    -> 30 partidas de 4 bots (evidencia de ejecucion)
-#include <cstdlib>
+// Fase-Orbital.cpp - Punto de entrada: lee los argumentos y elige el modo 
+
 #if defined(_MSC_VER) && defined(_DEBUG)
 #define _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>       // en Debug de Visual Studio informa las fugas de memoria al salir

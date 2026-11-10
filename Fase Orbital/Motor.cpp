@@ -366,7 +366,7 @@ void iniciarTurnoMotor(Motor& m, Jugador* nuevoJugador, const ColaSpawn& colaOle
 
     if (m.jugadorActual != nullptr)
     {
-        // Seccion 5.1: el combo se reinicia, la vida y la carga de pulso se CONSERVAN
+        // el combo se reinicia, la vida y la carga de pulso se CONSERVAN
         m.jugadorActual->combo = 0;
     }
 }
@@ -434,7 +434,7 @@ ResultadoTick procesarTickMotor(Motor& m, int nuevoColor)
         m.jugadorActual->est.disparos += 1;
     }
 
-    // Paso 5: mover enemigos (y cambiar el color de los Camaleones)
+    // mover enemigos (y cambiar el color de los Camaleones)
     NodoEnemigo* enemigoActual = m.listaEnemigos.primero();
     while (enemigoActual != nullptr)
     {
@@ -442,7 +442,7 @@ ResultadoTick procesarTickMotor(Motor& m, int nuevoColor)
         enemigoActual = enemigoActual->sig;
     }
 
-    // Paso 6: choques enemigo-nave y enemigo-nucleo
+    // choques enemigo-nave y enemigo-nucleo
     double naveX = 0.0;
     double naveY = 0.0;
     posicionPolarACartesiana(RADIO_ANILLO, m.anguloNave, naveX, naveY);
@@ -557,7 +557,7 @@ ResultadoTick procesarTickMotor(Motor& m, int nuevoColor)
     // Una sola pasada con NodoBala**: borra todas las marcadas, sin caso especial para la cabeza
     m.listaBalas.eliminarSi(balaInactiva);
 
-    // Onda de pulso (seccion 3.4): nace en r = 20, crece 12 u/tick y destruye
+    // Onda de pulso nace en r = 20, crece 12 u/tick y destruye
     // sin importar el color a todo enemigo con |r - r_onda| < radio + 3
     if (m.ondaActiva)
     {
@@ -579,7 +579,7 @@ ResultadoTick procesarTickMotor(Motor& m, int nuevoColor)
             m.ondaActiva = false;
     }
 
-    // Paso 10: fin de turno del jugador (lo decide el Motor, no la vista)
+    // fin de turno del jugador (lo decide el Motor, no la vista)
     if (m.jugadorActual->vidaNucleo <= 0)
     {
         registrarEvento(m, TipoEvento::ELIMINACION, -1, -1, m.jugadorActual->puntaje);

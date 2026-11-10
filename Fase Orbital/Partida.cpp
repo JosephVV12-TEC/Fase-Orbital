@@ -236,7 +236,7 @@ void imprimirReportePartida(const Partida& p, ostream& os)
         os << ")\n";
     }
 
-    // ---- Linea de tiempo por oleada, calculada recorriendo la bitacora (6.2) ----
+    // ---- Linea de tiempo por oleada, calculada recorriendo la bitacora ----
     os << "\nLINEA DE TIEMPO POR OLEADA\n";
     for (int k = 0; k < p.cantidad; ++k)
     {
@@ -274,7 +274,7 @@ void imprimirReportePartida(const Partida& p, ostream& os)
 // ---------------------------------------------------------------------------
 namespace
 {
-    // Nombres de las 33 columnas, en orden. Las primeras 21 son las del PDF.
+    // Nombres de las 33 columnas, en orden.
     const char* NOMBRES_COLUMNAS[NUM_COLUMNAS] =
     {
         "id_partida", "semilla", "modo", "jugador", "es_bot", "posicion", "puntaje", "oleada",
