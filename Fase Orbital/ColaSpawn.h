@@ -32,8 +32,7 @@ struct ColaSpawn //Este struct es la cola de spawns, que es basicamente una list
 };
 //ColaSpawn y NodoSpawn se diferencian en que Cola es el que tiene el frente y el final de la lista, mientras que Nodo es el que tiene el dato y el siguiente, que es el que se va a ir moviendo en la lista es como poner una dentro de otra
 
-//Ahora se hacen las funciones de la cola de spawns, que son las funciones que se van a usar para manejar la cola de enemigos que se van a ir apareciendo en el juego
-//La c sera la cola de spawns, y el s sera el spawn que se va a encolar o desencolar, y el salida sera el spawn que se va a desencolar y se va a guardar en la variable salida
+//Ahora se hacen las funciones de la cola de spawns, que son las funciones que se van a usar para manejar la cola de enemigos que se van a ir apareciendo en el juego. La c sera la cola de spawns, y el s sera el spawn que se va a encolar o desencolar, y el salida sera el spawn que se va a desencolar y se va a guardar en la variable salida
 //No se necesita poner nada dentro de las funciones porque se van a implementar en el archivo .cpp, esto hace que se evite que se vea todo el codigo en un solo archivo y se vea mas ordenado, ademas de que hace que sea mas facil de leer y entender el codigo
 
 void inicializarCola(ColaSpawn& c);

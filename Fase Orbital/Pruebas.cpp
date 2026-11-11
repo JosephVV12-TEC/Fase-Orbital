@@ -4,7 +4,7 @@
 #include "ColaSpawn.h"
 #include "RondaJugadores.h"
 #include "Motor.h"
-#include "Partida.h"       // historial, estadisticas y ranking del equipo viven aqui
+#include "Partida.h"
 #include "ModoLotes.h"
 
 #include <iostream>
@@ -20,11 +20,11 @@ namespace
     int pasaron = 0;
     int total = 0;
 
-    void resultado(const char* id, const char* descripcion, bool ok)
+	void resultado(const char* id, const char* descripcion, bool ok) //Esto es para imprimir el resultado de cada prueba, si paso o fallo
     {
         ++total;
         if (ok) ++pasaron;
-        cout << (ok ? "[ OK ] " : "[FALLA] ") << id << "  " << descripcion << endl;
+        cout << (ok ? "[ OK ] " : "[FALLA] ") << id << "  " << descripcion << endl; //Traducido esto dice si paso o fallo la prueba, el id de la prueba y la descripcion de la prueba
     }
 
     Enemigo enemigo(int id, TipoEnemigo tipo, int color, double r, double theta, int vida, int radio)
@@ -49,8 +49,8 @@ namespace
         }
     };
 
-    // ---------------- P01 - P03: ListaEnemigos ----------------
-    void p01()
+    // Prueba 1 a 3, las de lista enemigos
+    void p01() // Esta mete 1000 nodos o sea enemigos y borra los de indice par al recorrer la lista, verifica que queden la mitad y que si se recorre de ida y vuelta sean lo mismo
     {
         ListaEnemigos lista;
         for (int i = 1; i <= 1000; ++i)
@@ -58,7 +58,7 @@ namespace
 
         NodoEnemigo* n = lista.primero();
         while (n != nullptr)
-            n = (n->dato.id % 2 == 0) ? lista.eliminar(n) : n->sig;    // eliminar devuelve el siguiente
+            n = (n->dato.id % 2 == 0) ? lista.eliminar(n) : n->sig;// eliminar devuelve el siguiente
 
         bool ok = (lista.tamano() == 500);
         int adelante[500], atras[500], a = 0, b = 499;
@@ -70,7 +70,7 @@ namespace
         resultado("P01", "ListaEnemigos: 1000 nodos, eliminar los pares durante el recorrido -> tamano 500, ida y vuelta coinciden", ok);
     }
 
-    void p02()
+    void p02() //Esta prueba inserta 3 nodos y elimina primero la cabeza, luego la cola y finalmente el unico nodo que queda, verificando que los punteros de primero y ultimo queden nulos al final (esto es para que el programa SEPAMOS que queda sin leakeos de informacion)
     {
         ListaEnemigos lista;
         NodoEnemigo* a = lista.insertarFinal(enemigo(1, TipoEnemigo::Dron, 0, 1, 0, 1, 1));
@@ -86,7 +86,7 @@ namespace
         resultado("P02", "ListaEnemigos: eliminar cabeza, cola y nodo unico -> punteros correctos, lista vacia con ambos nulos", ok);
     }
 
-    void p03()
+    void p03() //Esta es la que inserta un enemigo despues del ultimo nodo ya hehco y comprueba que vaya al final
     {
         ListaEnemigos lista;
         lista.insertarFinal(enemigo(1, TipoEnemigo::Dron, 0, 1, 0, 1, 1));
@@ -96,14 +96,13 @@ namespace
         resultado("P03", "ListaEnemigos: insertarDespues sobre el ultimo nodo -> la cola se actualiza", ok);
     }
 
-    // ---------------- P04: ListaBalas ----------------
-    // Marca para borrar las balas de color 7, 8, 9 (cabeza y consecutivas) y 4, 3 (consecutivas en medio)
+    // Marca para borrar las balas de color 7, 8, 9 (cabeza y consecutivas) y 4, 3 (consecutivas en medio) 
     bool balaMarcada(const Bala& b)
     {
         return b.color >= 7 || b.color == 4 || b.color == 3;
     }
 
-    void p04()
+    void p04() //La prueba borra varias balas seguidas con el puntero de la cabeza y comprueba que solo queden las que se necesitan
     {
         ListaBalas balas;
         for (int i = 0; i < 10; ++i)// la ultima insertada queda en la cabeza: orden 9,8,...,0
@@ -123,10 +122,10 @@ namespace
         resultado("P04", "ListaBalas: eliminar balas consecutivas incluida la cabeza con NodoBala** -> ninguna marcada sobrevive, ninguna valida se pierde", ok);
     }
 
-    // ---------------- P05 - P06: ColaSpawn ----------------
+    //este spawn es para las pruebas de la cola de spawn, que es una cola FIFO de enemigos a spawnear, con su tick de spawn y colo
     Spawn spawn(int tick) { Spawn s; s.tipoEnemigo = 0; s.tickSpawn = tick; s.color = 0; s.angulo = 0; s.sentido = 0; return s; }
 
-    void p05()
+    void p05() //La prueba 5 mete enemigos y los saca hasta vaciarla, tambien comprueba que los punteros queden nulos y que si la cola esta vacia que meta falso
     {
         ColaSpawn cola;
         for (int i = 0; i < 4; ++i) encolar(cola, spawn(i));
@@ -138,7 +137,7 @@ namespace
         resultado("P05", "ColaSpawn: encolar y desencolar hasta vaciar -> frente y final nulos; desencolar en vacia retorna falso", ok);
     }
 
-    void p06()
+    void p06() //Esta prueba copia la cola de spawn y destruye la copia, verificando que la original quede intacta y que no haya doble liberacion de memoria (como para saber si las copias se generan bien y no afectan a la original)
     {
         ColaSpawn original;
         for (int i = 0; i < 5; ++i) encolar(original, spawn(i * 10));
@@ -163,7 +162,7 @@ namespace
         resultado("P06", "ColaSpawn: copiar, consumir la copia, destruir ambas -> original intacta, sin doble liberacion", ok);
     }
 
-    // ---------------- P07: RondaJugadores ----------------
+    //Esta orueba rota la ronda de jugadores en sentido horario y su contraparte, y elimina al jugador actual y luego al ultimo, es para saber si las rondas (en circulo) si sirven
     void p07()
     {
         Jugador a, b, c;
@@ -192,7 +191,7 @@ namespace
         resultado("P07", "RondaJugadores: eliminar el actual, el unico jugador y rotar en ambos sentidos -> enlaces circulares validos", ok);
     }
 
-    // ---------------- P08: reproducibilidad ----------------
+    //La prueba 8 ya empieza a ser de las reglas del juego en si y lo que hace es que juega dos veces la partida con la misma semilla y los mismos comandos y comprueba que sea el mismo resultado
     void p08()
     {
         // 1) Solo bots
@@ -233,8 +232,8 @@ namespace
         resultado("P08", "Motor: dos ejecuciones con la misma semilla (y con el mismo script) -> reportes identicos", ok);
     }
 
-    // ---------------- P09 - P11: reglas del Motor ----------------
-    void p09()
+ 
+	void p09()// La prueba nueve prueba los colores y como inpactan con algo incorrecto, ademas de que el combo se reinicia y la vida del nucleo no cambia, pero si aumenta el r del enemigo en 9 o sea lo retrocede 
     {
         Escenario e;
         e.j.combo = 7;
@@ -254,7 +253,7 @@ namespace
         resultado("P09", "Motor: impacto con color incorrecto -> r aumenta 9, combo = 0, vida sin cambio", ok);
     }
 
-    void p10()
+    void p10() //La prueba 10 es de matar a un enemigo divisor y se asegura que se hagan los dos mini enemigos y de colores distintos
     {
         Escenario e;
         e.m.listaEnemigos.insertarFinal(enemigo(1, TipoEnemigo::Dron, 0, 250.0, 90.0, 1, 6));
@@ -278,7 +277,7 @@ namespace
         resultado("P10", "Motor: baja de un Divisor -> dos Mini en su posicion, con los dos colores distintos al del padre", ok);
     }
 
-    void p11()
+    void p11() // La prueba 11 es de la onda expansiva del pulso, que solo se activa con carga 100 y destruye a los enemigos sin importar nada
     {
         // Carga 99: el pulso no hace nada
         bool ok = true;
@@ -306,7 +305,7 @@ namespace
         resultado("P11", "Motor: pulso con carga < 100 (sin efecto) y con carga 100 (bajas en la banda, sin subir combo)", ok);
     }
 
-    // ---------------- P12: merge sort sobre lista, mediana, media y sigma ----------------
+    
     NodoNum* listaDe(const double* v, int n)
     {
         NodoNum* cabeza = nullptr;
@@ -352,7 +351,7 @@ namespace
         resumenDeJugador(h, "X", r);
     }
 
-    void p12()
+    void p12() //Prueba 12 es de estadisticas, que hace un merge sort con listas y calcula la mediana, media, sigma (sigma es la desviacion estandar) y el histograma de puntajes
     {
         const double uno[1] = { 5 };
         const double dos[2] = { 2, 1 };
@@ -378,7 +377,7 @@ namespace
         resultado("P12", "Estadisticas: merge sort con lista vacia, 1, 2, ordenada, inversa y repetidos; mediana con N par e impar; media, sigma e histograma", ok);
     }
 
-    // ---------------- P13: persistencia ----------------
+    //Esta prueba es de la persistencia, que genera un historial de partidas con bots, agrega lineas invalidas a prooposito y luego carga dos veces el historial y compara que las estadisticas y ranking sean iguales
     void p13()
     {
         const string ruta = "prueba_historial_p13.csv";
@@ -409,7 +408,7 @@ namespace
         resultado("P13", "Persistencia: guardar, reiniciar y cargar -> mismos resultados en estadisticas y ranking; lineas invalidas reportadas", ok);
     }
 
-    // ---------------- P14: memoria ----------------
+    //Por ultimo, la p14 lo que hace es ejecutar una partida con 4 bots y 10 oleadas, y se verifica que no haya fugas de memoria
     void p14()
     {
         OpcionesLote op;

@@ -14,12 +14,12 @@ typedef struct nodoRonda //Este es el struct que representa un nodo de la ronda,
 
 struct RondaJugadores //Este segundo struct te da la ronda en si, aca estan los punteros a los nodos del anterior struct
 {
-    PtrNodoRonda actual;   //El jugador al que le toca
-    int tam;               //Cuantos jugadores hay
+    PtrNodoRonda actual;//El jugador al que le toca
+    int tam;//Cuantos jugadores hay
 
-    RondaJugadores();                                        // ronda vacia
-    ~RondaJugadores();                                       // libera los nodos (NO los jugadores)
-    RondaJugadores(const RondaJugadores&) = delete;          // copiar compartiria nodos y jugadores
+    RondaJugadores();// ronda vacia
+    ~RondaJugadores();// libera los nodos (NO los jugadores)
+    RondaJugadores(const RondaJugadores&) = delete;// copiar compartiria nodos y jugadores
     RondaJugadores& operator=(const RondaJugadores&) = delete;
 };
 
