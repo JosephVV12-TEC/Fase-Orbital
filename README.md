@@ -16,7 +16,3 @@
 4. Ejecuta **Compilar > Compilar solución**.
 
 El proyecto está configurado para C++20 y utiliza el toolset `v145`. También incluye configuraciones `Debug` y `Release` para `Win32` y `x64`.
-
-## Imagen del Día
-
-![SOS Dan](./photos/fanclub.jpg)
